@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+<script src="api.js"></script>
+
+<div id="navbar"></div>
+
+<main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <span>🛡️</span> Admin Dashboard
+      </h1>
+      <p class="text-xs text-gray-500 mt-1">Dữ liệu thống kê thời gian thực từ hệ thống cơ sở dữ liệu</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="last-updated" class="text-xs text-gray-400"></span>
+      <button onclick="refreshAll()" class="text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold border border-indigo-200 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+        <span>↺</span> Làm mới dữ liệu
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== STAT CARDS ===== -->
+  <div id="stat-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl shadow p-5 animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div><div class="h-8 bg-gray-200 rounded w-1/2"></div></div>
+    <div class="bg-white rounded-2xl shadow p-5 animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div><div class="h-8 bg-gray-200 rounded w-1/2"></div></div>
+    <div class="bg-white rounded-2xl shadow p-5 animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div><div class="h-8 bg-gray-200 rounded w-1/2"></div></div>
+    <div class="bg-white rounded-2xl shadow p-5 animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div><div class="h-8 bg-gray-200 rounded w-1/2"></div></div>
+  </div>
+
+  <!-- ===== BIỂU ĐỒ DOANH THU & TỶ LỆ VÉ (Canvas thuần) ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow p-6 border border-gray-100">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <span>📈</span> Doanh thu 12 tháng thực tế
+        </h2>
+        <span class="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full" id="revenue-sum-badge">0 ₫</span>
+      </div>
+      <canvas id="revenue-chart" height="200"></canvas>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+      <h2 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span>📊</span> Phân bổ trạng thái vé
+      </h2>
+      <canvas id="ticket-pie" height="180"></canvas>
+      <div id="pie-legend" class="mt-4 space-y-2 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- ===== DANH SÁCH VÉ ĐẶT GẦN ĐÂY (Realtime DB) ===== -->
+  <div class="bg-white rounded-2xl shadow p-6 mb-8 border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+        <span>🎫</span> Vé đặt gần đây nhất
+      </h2>
+      <span id="recent-count" class="text-xs text-gray-400"></span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+            <th class="px-4 py-3 text-left rounded-l-xl">Mã vé</th>
+            <th class="px-4 py-3 text-left">Hành khách</th>
+            <th class="px-4 py-3 text-left">Số điện thoại</th>
+            <th class="px-4 py-3 text-left">Ghế</th>
+            <th class="px-4 py-3 text-left">Giá vé</th>
+            <th class="px-4 py-3 text-left">Thời gian đặt</th>
+            <th class="px-4 py-3 text-left rounded-r-xl">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody id="recent-tickets-body">
+          <tr>
+            <td colspan="7" class="text-center py-6 text-gray-400">Đang tải danh sách vé...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== QUẢN LÝ ĐỐI TÁC NHÀ XE ===== -->
+  <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+        <span>🏢</span> Đối tác nhà xe liên kết
+      </h2>
+      <button onclick="openAddPartnerModal()"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition shadow-sm">
+        ➕ Thêm nhà xe mới
+      </button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+            <th class="px-4 py-3 text-left rounded-l-xl">ID</th>
+            <th class="px-4 py-3 text-left">Tên nhà xe</th>
+            <th class="px-4 py-3 text-left">Mã</th>
+            <th class="px-4 py-3 text-left">Email</th>
+            <th class="px-4 py-3 text-left">Hotline</th>
+            <th class="px-4 py-3 text-left">Trạng thái</th>
+            <th class="px-4 py-3 text-left rounded-r-xl">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="partner-table-body">
+          <tr>
+            <td colspan="7" class="text-center py-8 text-gray-400">Đang tải danh sách đối tác...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ===== MODAL THÊM ĐỐI TÁC ===== -->
+<div id="add-partner-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between p-6 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-800">➕ Thêm đối tác nhà xe</h3>
+      <button onclick="closeAddPartnerModal()" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <form id="add-partner-form" onsubmit="submitAddPartner(event)" class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Tên nhà xe</label>
+        <input id="partner-name" type="text" placeholder="VD: Công ty Cổ phần Xe khách Phương Trang" required
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Mã nhà xe (Code)</label>
+          <input id="partner-code" type="text" placeholder="VD: FUTA" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
+          <input id="partner-phone" type="tel" placeholder="19006067" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Email liên hệ</label>
+        <input id="partner-email" type="email" placeholder="contact@futa.vn"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ trụ sở</label>
+        <input id="partner-address" type="text" placeholder="01 Tô Hiến Thành, Phường 3, TP. Đà Lạt"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeAddPartnerModal()"
+          class="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">
+          Hủy
+        </button>
+        <button type="submit" id="btn-add-partner"
+          class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition">
+          ✅ Thêm đối tác
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="bg-gray-800 text-gray-400 text-center py-6 mt-auto text-sm">
+  <p>🚌 <strong class="text-white">BusTicket Pro</strong> &copy; 2025 – Quản trị hệ thống đa đối tác</p>
+</footer>
+
+<style>
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+</style>
+
+<script>
+  let dashboardData = null;
+
+  // ===== KHỞI TẠO =====
+  (async function init() {
+    if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
+    const user = getCurrentUser();
+    const role = user?.role || '';
+    if (!role.includes('ADMIN')) {
+      showToast('Chỉ Quản trị viên (ADMIN) mới có quyền truy cập trang này!', 'error');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+      return;
+    }
+    renderNavbar('admin');
+    await refreshAll();
+  })();
+
+  async function refreshAll() {
+    await loadOverview();
+  }
+
+  // ===== TẢI DỮ LIỆU TỔNG QUAN REALTIME =====
+  // GET /api/v1/admin/overview
+  async function loadOverview() {
+    try {
+      const data = await fetchAPI('/admin/overview');
+      dashboardData = data;
+      renderStatCards(data);
+      renderRevenueChart(data?.chartData || []);
+      renderTicketPie(data);
+      renderRecentTickets(data?.recentTickets || []);
+      renderPartnerTable(data?.operatorsList || []);
+
+      document.getElementById('last-updated').textContent =
+        `Cập nhật lúc: ${new Date().toLocaleTimeString('vi-VN')}`;
+    } catch (err) {
+      document.getElementById('stat-cards').innerHTML =
+        '<div class="col-span-4 text-center py-8 text-red-500 font-semibold">Không thể tải dữ liệu Admin Dashboard!</div>';
+    }
+  }
+
+  // ===== RENDER STAT CARDS =====
+  function renderStatCards(data) {
+    if (!data) return;
+
+    const cards = [
+      {
+        icon: '💰',
+        label: 'Doanh thu thực tế',
+        value: formatVND(data.totalRevenue ?? 0),
+        color: 'from-emerald-600 to-teal-700',
+        sub: `${data.totalTicketsSold ?? 0} vé đã xác nhận`,
+      },
+      {
+        icon: '🎫',
+        label: 'Tổng số vé',
+        value: (data.totalTickets ?? 0).toLocaleString('vi-VN'),
+        color: 'from-blue-600 to-indigo-700',
+        sub: `${data.pendingTickets ?? 0} chờ thanh toán`,
+      },
+      {
+        icon: '🏢',
+        label: 'Nhà xe đối tác',
+        value: (data.totalOperators ?? 0).toLocaleString('vi-VN'),
+        color: 'from-purple-600 to-violet-800',
+        sub: `${data.totalBuses ?? 0} phương tiện hoạt động`,
+      },
+      {
+        icon: '🗓️',
+        label: 'Tổng chuyến xe',
+        value: (data.totalTrips ?? 0).toLocaleString('vi-VN'),
+        color: 'from-amber-600 to-orange-700',
+        sub: `${data.totalRoutes ?? 0} tuyến đường khai thác`,
+      },
+    ];
+
+    document.getElementById('stat-cards').innerHTML = cards.map(c => `
+      <div class="bg-gradient-to-br ${c.color} text-white rounded-2xl shadow-lg p-5">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-3xl">${c.icon}</span>
+          <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">${c.sub}</span>
+        </div>
+        <div class="text-2xl font-extrabold mb-0.5 tracking-tight">${c.value}</div>
+        <div class="text-xs text-white/80 font-medium">${c.label}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('revenue-sum-badge').textContent = formatVND(data.totalRevenue ?? 0);
+  }
+
+  // ===== VẼ BIỂU ĐỒ DOANH THU 12 THÁNG (Canvas thuần, 100% dữ liệu thực từ DB) =====
+  function renderRevenueChart(chartData) {
+    const canvas = document.getElementById('revenue-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width  = canvas.offsetWidth || 500;
+    canvas.height = 200;
+
+    const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+    const values = months.map((m, i) => {
+      const found = chartData.find(item => item.month === m || item.monthNumber === (i + 1));
+      return found ? (Number(found.revenue) || 0) : 0;
+    });
+
+    const maxVal = Math.max(...values, 1000000);
+    const padL = 60, padR = 20, padT = 20, padB = 40;
+    const w = canvas.width - padL - padR;
+    const h = canvas.height - padT - padB;
+    const barW = (w / months.length) * 0.55;
+    const gap = w / months.length;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Đường kẻ ngang và labels
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (h / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + w, y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      const labelVal = maxVal - (maxVal / 4) * i;
+      ctx.fillText(formatShortAmount(labelVal), padL - 6, y + 3);
+    }
+
+    // Vẽ các cột thực tế
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * h;
+      const x = padL + gap * i + (gap - barW) / 2;
+      const y = padT + h - barH;
+
+      const grad = ctx.createLinearGradient(0, y, 0, padT + h);
+      grad.addColorStop(0, '#4f46e5');
+      grad.addColorStop(1, '#818cf8');
+
+      ctx.fillStyle = val > 0 ? grad : '#e2e8f0';
+      ctx.beginPath();
+      ctx.roundRect(x, Math.min(y, padT + h - 2), barW, Math.max(barH, 2), [4, 4, 0, 0]);
+      ctx.fill();
+
+      // Label tháng
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(months[i], x + barW / 2, padT + h + 18);
+
+      // Giá trị trên đầu cột nếu có doanh thu
+      if (val > 0) {
+        ctx.fillStyle = '#4338ca';
+        ctx.font = 'bold 9px system-ui';
+        ctx.fillText(formatShortAmount(val), x + barW / 2, y - 5);
+      }
+    });
+  }
+
+  function formatShortAmount(val) {
+    if (val >= 1000000000) return (val / 1000000000).toFixed(1) + 'B';
+    if (val >= 1000000)    return (val / 1000000).toFixed(1) + 'M';
+    if (val >= 1000)       return (val / 1000).toFixed(0) + 'K';
+    return val.toString();
+  }
+
+  // ===== VẼ PIE CHART TỶ LỆ VÉ (Canvas thuần) =====
+  function renderTicketPie(data) {
+    const canvas = document.getElementById('ticket-pie');
+    if (!canvas || !data) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width  = canvas.offsetWidth || 200;
+    canvas.height = 180;
+
+    const confirmed = Number(data.totalTicketsSold ?? data.confirmedTickets ?? 0);
+    const pending   = Number(data.pendingTickets ?? 0);
+    const cancelled = Number(data.cancelledTickets ?? 0);
+    const total     = confirmed + pending + cancelled || 1;
+
+    const segments = [
+      { label: 'Đã xác nhận', value: confirmed, color: '#10b981' },
+      { label: 'Chờ thanh toán', value: pending, color: '#f59e0b' },
+      { label: 'Đã hủy', value: cancelled, color: '#ef4444' },
+    ];
+
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const radius = Math.min(cx, cy) - 15;
+    let angle = -Math.PI / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (total === 1 && confirmed === 0 && pending === 0 && cancelled === 0) {
+      // Vẽ vòng tròn rỗng
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 14;
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('Chưa có vé', cx, cy + 4);
+    } else {
+      segments.forEach(seg => {
+        if (seg.value <= 0) return;
+        const slice = (seg.value / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, angle, angle + slice);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+        angle += slice;
+      });
+
+      // Donut hole
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.55, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      // Total text
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 16px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText((total > 1 ? total : confirmed).toLocaleString('vi-VN'), cx, cy + 5);
+    }
+
+    // Legend
+    document.getElementById('pie-legend').innerHTML = segments.map(s => `
+      <div class="flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full" style="background:${s.color}"></div>
+          <span class="text-gray-600">${s.label}</span>
+        </div>
+        <span class="font-bold text-gray-800">${s.value.toLocaleString('vi-VN')}</span>
+      </div>
+    `).join('');
+  }
+
+  // ===== RENDER VÉ ĐẶT GẦN ĐÂY =====
+  function renderRecentTickets(tickets) {
+    const tbody = document.getElementById('recent-tickets-body');
+    document.getElementById('recent-count').textContent = `Hiển thị ${tickets.length} vé mới nhất`;
+
+    if (tickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-gray-400">Chưa có giao dịch vé nào trong hệ thống.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = tickets.map(t => `
+      <tr class="border-t border-gray-100 hover:bg-gray-50 transition">
+        <td class="px-4 py-3 font-semibold text-indigo-600 text-xs">#${t.ticketCode || t.ticketId}</td>
+        <td class="px-4 py-3 font-medium text-gray-800">${t.customerName || '—'}</td>
+        <td class="px-4 py-3 text-gray-600 text-xs">${t.customerPhone || '—'}</td>
+        <td class="px-4 py-3 font-bold text-gray-700">🪑 ${t.seatNumber || '—'}</td>
+        <td class="px-4 py-3 font-bold text-emerald-600">${formatVND(t.price)}</td>
+        <td class="px-4 py-3 text-gray-500 text-xs">${formatDateTime(t.bookingTime)}</td>
+        <td class="px-4 py-3">${statusBadge(t.status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ===== RENDER DANH SÁCH ĐỐI TÁC =====
+  function renderPartnerTable(partners) {
+    const tbody = document.getElementById('partner-table-body');
+    if (!partners || partners.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">Chưa có đối tác nhà xe nào.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = partners.map(p => `
+      <tr class="border-t border-gray-100 hover:bg-gray-50 transition">
+        <td class="px-4 py-3 text-gray-400 text-xs">#${p.id}</td>
+        <td class="px-4 py-3">
+          <div class="font-semibold text-gray-800">${p.name || '—'}</div>
+          <div class="text-xs text-gray-400">${p.address || ''}</div>
+        </td>
+        <td class="px-4 py-3 font-bold text-indigo-600 text-xs">${p.code || '—'}</td>
+        <td class="px-4 py-3 text-gray-600 text-xs">${p.contactEmail || '—'}</td>
+        <td class="px-4 py-3 text-gray-600 text-xs">${p.contactPhone || '—'}</td>
+        <td class="px-4 py-3">${statusBadge(p.status || 'ACTIVE')}</td>
+        <td class="px-4 py-3">
+          <div class="flex gap-1.5 flex-wrap">
+            ${p.status !== 'ACTIVE' ? `
+              <button onclick="updatePartnerStatus(${p.id}, 'ACTIVE')"
+                class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2.5 py-1 rounded-lg font-semibold transition">
+                ✅ Duyệt
+              </button>
+            ` : ''}
+            ${p.status !== 'SUSPENDED' ? `
+              <button onclick="updatePartnerStatus(${p.id}, 'SUSPENDED')"
+                class="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2.5 py-1 rounded-lg font-semibold transition">
+                🚫 Khóa
+              </button>
+            ` : ''}
+            ${p.status !== 'INACTIVE' ? `
+              <button onclick="updatePartnerStatus(${p.id}, 'INACTIVE')"
+                class="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-2.5 py-1 rounded-lg font-semibold transition">
+                ⏸ Vô hiệu
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ===== CẬP NHẬT TRẠNG THÁI ĐỐI TÁC =====
+  async function updatePartnerStatus(partnerId, status) {
+    const statusText = { ACTIVE: 'DUYỆT hoạt động', SUSPENDED: 'KHÓA', INACTIVE: 'VÔ HIỆU HÓA' };
+    if (!confirm(`Bạn có chắc muốn ${statusText[status]} đối tác này?`)) return;
+
+    showLoading(true);
+    try {
+      await fetchAPI(`/admin/partners/${partnerId}/status`, 'PUT', null, { status });
+      showToast(`Đã cập nhật trạng thái đối tác sang ${status}!`, 'success');
+      await refreshAll();
+    } catch (err) {
+      //
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // ===== THÊM ĐỐI TÁC =====
+  function openAddPartnerModal() {
+    document.getElementById('add-partner-modal').classList.remove('hidden');
+    document.getElementById('add-partner-modal').classList.add('flex');
+  }
+
+  function closeAddPartnerModal() {
+    document.getElementById('add-partner-modal').classList.add('hidden');
+    document.getElementById('add-partner-modal').classList.remove('flex');
+    document.getElementById('add-partner-form').reset();
+  }
+
+  async function submitAddPartner(event) {
+    event.preventDefault();
+    const name         = document.getElementById('partner-name').value.trim();
+    const code         = document.getElementById('partner-code').value.trim();
+    const contactPhone = document.getElementById('partner-phone').value.trim();
+    const contactEmail = document.getElementById('partner-email').value.trim();
+    const address      = document.getElementById('partner-address').value.trim();
+
+    if (!name || !code || !contactPhone) {
+      showToast('Vui lòng điền tên, mã nhà xe và số điện thoại!', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('btn-add-partner');
+    btn.disabled = true;
+    btn.textContent = 'Đang thêm...';
+    showLoading(true);
+
+    try {
+      await fetchAPI('/admin/partners', 'POST', {
+        name,
+        code,
+        contactPhone,
+        contactEmail: contactEmail || null,
+        address: address || null,
+        status: 'ACTIVE'
+      });
+      showToast('✅ Thêm nhà xe đối tác thành công!', 'success', 3000);
+      closeAddPartnerModal();
+      await refreshAll();
+    } catch (err) {
+      //
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✅ Thêm đối tác';
+      showLoading(false);
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    if (dashboardData) {
+      renderRevenueChart(dashboardData.chartData || []);
+      renderTicketPie(dashboardData);
+    }
+  });
+</script>
+</body>
+</html>

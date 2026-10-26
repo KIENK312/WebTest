@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanh Toán Vé Xe Khách VietQR – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Main Payment Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full">
+    
+    <!-- Header: Countdown Timer & Title -->
+    <div class="text-center max-w-lg mx-auto mb-8">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold mb-3 shadow-2xs">
+        <i class="fa-solid fa-hourglass-half fa-spin"></i>
+        <span>Đang giữ chỗ cho bạn</span>
+      </div>
+      
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Thanh Toán Chuyển Khoản VietQR</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-1">Quét mã QR bằng bất kỳ ứng dụng ngân hàng hoặc ví điện tử</p>
+
+      <!-- Countdown Timer Box -->
+      <div class="mt-4 inline-flex items-center gap-3 bg-white px-6 py-2.5 rounded-2xl border border-slate-200/80 shadow-md">
+        <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Thời gian còn lại:</span>
+        <div id="countdown-timer" class="text-2xl sm:text-3xl font-black text-blue-600 font-mono tracking-wider transition-colors duration-300">
+          10:00
+        </div>
+      </div>
+    </div>
+
+    <!-- Main QR Card Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT: VIETQR CARD -->
+      <div class="md:col-span-6 space-y-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xl relative overflow-hidden ring-4 ring-blue-100/80">
+          
+          <!-- Card Header Logo -->
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs">V</span>
+              <span class="font-black text-slate-800 text-sm tracking-wide">VIETQR 24/7</span>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+              <i class="fa-solid fa-bolt"></i> Xử lý tự động
+            </span>
+          </div>
+
+          <!-- QR Code Image with Glowing Border -->
+          <div class="relative w-64 h-64 mx-auto rounded-2xl p-3 bg-white border-2 border-orange-200 shadow-inner flex items-center justify-center">
+            <img id="qr-image" src="" alt="Mã VietQR" class="w-full h-full object-contain rounded-xl" />
+            <!-- Loading placeholder -->
+            <div id="qr-loading" class="absolute inset-0 bg-white/90 rounded-2xl flex flex-col items-center justify-center text-xs font-bold text-slate-500">
+              <div class="w-10 h-10 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-2"></div>
+              <span>Đang sinh mã VietQR...</span>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 text-center mt-3 font-medium">
+            Mở app ngân hàng bất kỳ (Vietcombank, MB, Techcombank, Momo...) để quét mã
+          </p>
+
+          <!-- Mock Simulation Button (Test Webhook) -->
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                  <i class="fa-solid fa-flask-vial text-amber-600"></i>
+                  Sandbox: Thử nghiệm Thanh Toán
+                </span>
+                <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 bg-amber-200 text-amber-800 rounded">Mô phỏng</span>
+              </div>
+              <p class="text-[11px] text-amber-800 mb-3">
+                Nhấp nút bên dưới để giả lập Ngân hàng gửi Webhook xác nhận giao dịch thành công tới máy chủ:
+              </p>
+              <button onclick="simulateBankWebhook()" id="btn-simulate-webhook"
+                      class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Giả lập Quét Mã Thành Công</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: TRANSACTION DETAILS -->
+      <div class="md:col-span-6 space-y-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-md space-y-5">
+          
+          <h3 class="text-base font-extrabold text-slate-900 pb-3 border-b border-slate-100">
+            Thông tin chuyển khoản
+          </h3>
+
+          <!-- Số tiền cần thanh toán -->
+          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-100">
+            <span class="text-xs font-bold text-slate-500 block mb-0.5">Số tiền thanh toán:</span>
+            <div class="flex items-center justify-between">
+              <span id="payment-amount" class="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">0 đ</span>
+              <button onclick="copyToClipboard('amount-raw', 'Đã sao chép số tiền!')" class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Chi tiết tài khoản -->
+          <div class="space-y-3 text-xs font-semibold">
+            
+            <!-- Ngân hàng -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Ngân hàng thụ hưởng:</span>
+                <span id="bank-name" class="font-extrabold text-slate-800">MBBank (Quân Đội)</span>
+              </div>
+              <span class="text-xs font-black text-blue-700 bg-blue-50 px-2 py-1 rounded">MB</span>
+            </div>
+
+            <!-- Số tài khoản -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Số tài khoản:</span>
+                <span id="account-number" class="font-extrabold text-slate-900 font-mono text-sm">0987654321</span>
+              </div>
+              <button onclick="copyToClipboard('account-number', 'Đã sao chép số tài khoản!')" class="p-1.5 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+
+            <!-- Chủ tài khoản -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Chủ tài khoản:</span>
+                <span id="account-name" class="font-extrabold text-slate-800 uppercase">BUS BOOKING SYSTEM</span>
+              </div>
+              <i class="fa-solid fa-circle-check text-emerald-500"></i>
+            </div>
+
+            <!-- Nội dung chuyển khoản BẮT BUỘC -->
+            <div class="p-3.5 rounded-2xl bg-amber-50/70 border-2 border-amber-300">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-extrabold text-amber-900 uppercase">Nội dung chuyển khoản (Bắt buộc):</span>
+                <button onclick="copyToClipboard('transfer-content', 'Đã sao chép nội dung chuyển khoản!')" class="text-xs font-extrabold text-amber-700 hover:underline flex items-center gap-1">
+                  <i class="fa-regular fa-copy"></i> Copy
+                </button>
+              </div>
+              <div id="transfer-content" class="text-lg font-black text-amber-900 font-mono tracking-widest bg-white p-2 rounded-xl border border-amber-200 text-center">
+                VE---
+              </div>
+              <p class="text-[10px] text-amber-800 mt-1.5 text-center">
+                ⚠️ Vui lòng giữ nguyên nội dung trên để hệ thống tự động xuất vé ngay sau khi quét!
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Chi tiết vé tóm tắt -->
+          <div class="pt-3 border-t border-slate-100 text-xs font-semibold text-slate-600 space-y-1.5">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Mã vé (Ticket Code):</span>
+              <strong id="ticket-code-label" class="font-mono text-slate-800">—</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Hành khách:</span>
+              <strong id="ticket-customer-label" class="text-slate-800">—</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Ghế ngồi:</span>
+              <strong id="ticket-seat-label" class="text-slate-800">—</strong>
+            </div>
+          </div>
+
+          <!-- Nút Hủy giữ chỗ -->
+          <button onclick="confirmCancelTicket()" class="w-full py-2.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition">
+            <i class="fa-solid fa-xmark mr-1"></i> Hủy giao dịch & trả lại ghế
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Hidden text holders for copying -->
+  <span id="amount-raw" class="hidden"></span>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 mt-auto text-xs text-center border-t border-slate-800">
+    <p>&copy; 2026 BusTicket Pro Multi-Partner Platform. Hotline: 1900 6868</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="api.js"></script>
+  <script>
+    let ticketId = null;
+    let ticketData = null;
+    let qrData = null;
+    let countdownSeconds = 600; // 10 phút mặc định (600s)
+    let countdownInterval = null;
+    let pollInterval = null;
+
+    (async function init() {
+      renderNavbar();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      ticketId = urlParams.get('ticketId');
+
+      if (!ticketId) {
+        showErrorModal('Lỗi', 'Không tìm thấy thông tin vé cần thanh toán!');
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        return;
+      }
+
+      await loadTicketAndQr();
+      startCountdown();
+      startPollingStatus();
+    })();
+
+    // Lấy thông tin vé & sinh mã VietQR
+    async function loadTicketAndQr() {
+      try {
+        // 1. Chi tiết vé
+        ticketData = await fetchAPI(`/tickets/${ticketId}`);
+        if (!ticketData) throw new Error('Không tìm thấy vé');
+
+        document.getElementById('ticket-code-label').textContent = ticketData.ticketCode || `TK-${ticketId}`;
+        document.getElementById('ticket-customer-label').textContent = ticketData.customerName || '—';
+        document.getElementById('ticket-seat-label').textContent = ticketData.seatNumber || '—';
+
+        const amountNum = Number(ticketData.price || 0);
+        document.getElementById('payment-amount').textContent = formatVND(amountNum);
+        document.getElementById('amount-raw').textContent = amountNum;
+
+        // 2. Sinh mã QR từ PaymentService
+        // POST /api/v1/payments/qr/{ticketId}
+        qrData = await fetchAPI(`/payments/qr/${ticketId}`, 'POST');
+
+        if (qrData) {
+          document.getElementById('bank-name').textContent = qrData.bankName || 'MBBank';
+          document.getElementById('account-number').textContent = qrData.accountNumber || '0987654321';
+          document.getElementById('account-name').textContent = qrData.accountName || 'BUS BOOKING SYSTEM';
+          document.getElementById('transfer-content').textContent = qrData.transferContent || `VE${ticketId}`;
+
+          // Hiển thị ảnh QR
+          const qrImg = document.getElementById('qr-image');
+          qrImg.src = qrData.qrCodeUrl || `https://api.vietqr.io/image/970422-0987654321-compact2.jpg?amount=${amountNum}&addInfo=VE${ticketId}&accountName=BUS%20BOOKING%20SYSTEM`;
+          document.getElementById('qr-loading').classList.add('hidden');
+        }
+
+      } catch (err) {
+        // Modal lỗi đã hiển thị
+      }
+    }
+
+    // Đồng hồ đếm ngược 10 phút
+    function startCountdown() {
+      const timerEl = document.getElementById('countdown-timer');
+
+      countdownInterval = setInterval(() => {
+        countdownSeconds--;
+
+        if (countdownSeconds <= 0) {
+          clearInterval(countdownInterval);
+          clearInterval(pollInterval);
+          timerEl.textContent = '00:00';
+          timerEl.className = 'text-2xl sm:text-3xl font-black text-rose-600 font-mono tracking-wider animate-pulse';
+
+          showErrorModal(
+            'Hết thời gian giữ chỗ',
+            'Thời gian giữ chỗ 10 phút đã hết hạn. Vé đã tự động được hủy để nhường chỗ cho hành khách khác!'
+          );
+          setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+          return;
+        }
+
+        const mins = Math.floor(countdownSeconds / 60);
+        const secs = countdownSeconds % 60;
+        const pad = n => String(n).padStart(2, '0');
+        timerEl.textContent = `${pad(mins)}:${pad(secs)}`;
+
+        // Dưới 60s: Đổi sang màu đỏ nhấp nháy
+        if (countdownSeconds <= 60) {
+          timerEl.className = 'text-2xl sm:text-3xl font-black text-rose-500 font-mono tracking-wider animate-pulse';
+        }
+      }, 1000);
+    }
+
+    // Tự động kiểm tra trạng thái vé sau mỗi 2.5 giây
+    function startPollingStatus() {
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/tickets/${ticketId}`);
+          if (res.ok) {
+            const json = await res.json();
+            const ticket = json?.data || json;
+            if (ticket?.status === 'CONFIRMED') {
+              clearInterval(pollInterval);
+              clearInterval(countdownInterval);
+
+              showSuccessModal(
+                '🎉 Thanh toán thành công!',
+                `Hệ thống đã nhận được tiền và xác nhận vé ${ticket.ticketCode || `TK-${ticketId}`}. Mã vé điện tử đã sẵn sàng!`,
+                () => {
+                  window.location.href = 'my-tickets.html';
+                }
+              );
+            }
+          }
+        } catch (e) {
+          // Bỏ qua lỗi polling
+        }
+      }, 2500);
+    }
+
+    // Nút Giả lập Quét mã Webhook (Sandbox)
+    // POST /api/v1/payments/webhook
+    async function simulateBankWebhook() {
+      const btn = document.getElementById('btn-simulate-webhook');
+
+      await withButtonLoading(btn, async () => {
+        try {
+          const transferAmount = Number(ticketData?.price || qrData?.amount || 450000);
+          const transferContent = qrData?.transferContent || `VE${ticketId}`;
+          const transactionCode = `FT${Date.now()}`;
+
+          const webhookRes = await fetchAPI('/payments/webhook', 'POST', {
+            gateway:         'VIETQR',
+            transactionCode: transactionCode,
+            transferContent: transferContent,
+            transferAmount:  transferAmount,
+            bankAccount:     '0987654321',
+            transactionDate: new Date().toISOString()
+          });
+
+          // Webhook thành công
+          clearInterval(pollInterval);
+          clearInterval(countdownInterval);
+
+          showSuccessModal(
+            '🎉 Thanh toán thành công!',
+            `Đối soát hoàn tất! Giao dịch ${transactionCode} hợp lệ. Vé xe của bạn đã chuyển sang trạng thái CONFIRMED.`,
+            () => {
+              window.location.href = 'my-tickets.html';
+            }
+          );
+
+        } catch (err) {
+          // Toast / Modal lỗi đã được hiển thị qua fetchAPI
+        }
+      }, 'Đang đối soát giao dịch...');
+    }
+
+    // Hủy vé chủ động
+    async function confirmCancelTicket() {
+      const result = await Swal.fire({
+        title: 'Hủy giữ chỗ?',
+        text: 'Bạn có chắc chắn muốn hủy đặt vé này? Ghế sẽ được mở lại cho người khác.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Đồng ý hủy',
+        cancelButtonText: 'Quay lại'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          await fetchAPI(`/tickets/cancel/${ticketId}`, 'PUT');
+          clearInterval(pollInterval);
+          clearInterval(countdownInterval);
+          showToast('Đã hủy vé thành công!', 'info');
+          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+        } catch (err) {
+          // Toast lỗi đã hiển thị
+        }
+      }
+    }
+
+    // Sao chép vào clipboard
+    function copyToClipboard(elementId, successMsg) {
+      const el = document.getElementById(elementId);
+      const text = el ? (el.textContent || el.innerText).trim() : '';
+      if (!text) return;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(successMsg, 'success', 2000);
+      }).catch(() => {
+        showToast(text, 'info', 2000);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh Sách Chuyến Xe – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Search Summary Header Bar (Traveloka Style) -->
+  <div class="bg-white border-b border-slate-200/80 shadow-2xs py-4 sticky top-16 sm:top-20 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- Lộ trình tóm tắt -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-lg shadow-xs">
+          <i class="fa-solid fa-route"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="summary-origin" class="text-base sm:text-lg font-black text-slate-900">Hà Nội</span>
+            <i class="fa-solid fa-arrow-right-long text-orange-500 text-sm"></i>
+            <span id="summary-destination" class="text-base sm:text-lg font-black text-slate-900">Đà Nẵng</span>
+          </div>
+          <p id="summary-date" class="text-xs text-slate-500 font-medium">Hôm nay, 28/10/2026</p>
+        </div>
+      </div>
+
+      <!-- Quick Date Selector Buttons -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+        <button onclick="changeDateOffset(-1)" id="btn-prev-day" class="h-9 px-3 rounded-xl border border-slate-200 hover:border-orange-300 text-xs font-bold text-slate-600 hover:text-orange-600 bg-white transition flex items-center gap-1 shadow-2xs">
+          <i class="fa-solid fa-chevron-left text-[10px]"></i> Ngày trước
+        </button>
+        <button onclick="changeDateOffset(0)" id="btn-today" class="h-9 px-3.5 rounded-xl border border-orange-500 bg-orange-50 text-xs font-extrabold text-orange-700 transition shadow-2xs">
+          Ngày đang chọn
+        </button>
+        <button onclick="changeDateOffset(1)" id="btn-next-day" class="h-9 px-3 rounded-xl border border-slate-200 hover:border-orange-300 text-xs font-bold text-slate-600 hover:text-orange-600 bg-white transition flex items-center gap-1 shadow-2xs">
+          Ngày sau <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        </button>
+        <button onclick="toggleSearchModifier()" class="h-9 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition flex items-center gap-1.5 shadow-2xs">
+          <i class="fa-solid fa-sliders text-xs text-slate-500"></i> Đổi tìm kiếm
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Modifier Drawer (Ẩn/Hiện) -->
+    <div id="search-modifier" class="hidden max-w-7xl mx-auto px-4 sm:px-6 pt-4 mt-3 border-t border-slate-100">
+      <form onsubmit="applySearchModifier(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Điểm đi</label>
+          <input type="text" id="mod-origin" required class="w-full h-10 px-3 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Điểm đến</label>
+          <input type="text" id="mod-dest" required class="w-full h-10 px-3 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Ngày khởi hành</label>
+          <input type="date" id="mod-date" required class="w-full h-10 px-3 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <button type="submit" class="w-full h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs shadow-md transition">
+            Áp dụng
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content Layout (Sidebar Filters + Trip Cards) -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT SIDEBAR: BỘ LỌC (Filters) -->
+      <aside class="lg:col-span-4 xl:col-span-3 space-y-5">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm sticky top-44">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+            <h3 class="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-filter text-orange-500"></i>
+              <span>Bộ lọc chuyến xe</span>
+            </h3>
+            <button onclick="resetFilters()" class="text-xs font-bold text-orange-600 hover:text-orange-700 transition">
+              Đặt lại
+            </button>
+          </div>
+
+          <!-- 1. Sắp xếp theo -->
+          <div class="mb-6">
+            <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2.5">Sắp xếp theo</label>
+            <select id="filter-sort" onchange="filterAndRenderTrips()"
+                    class="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <option value="time-asc">Giờ đi: Sớm nhất</option>
+              <option value="time-desc">Giờ đi: Muộn nhất</option>
+              <option value="price-asc">Giá vé: Thấp đến cao</option>
+              <option value="price-desc">Giá vé: Cao đến thấp</option>
+            </select>
+          </div>
+
+          <!-- 2. Khung giờ khởi hành -->
+          <div class="mb-6">
+            <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2.5">Khung giờ xuất bến</label>
+            <div class="space-y-2 text-xs font-semibold text-slate-600">
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="time-filter" value="morning" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+                <span>Buổi sáng (06:00 - 12:00)</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="time-filter" value="afternoon" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+                <span>Buổi chiều (12:00 - 18:00)</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="time-filter" value="evening" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+                <span>Buổi tối (18:00 - 24:00)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. Nhà xe đối tác -->
+          <div class="mb-6">
+            <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2.5">Nhà xe</label>
+            <div id="operator-filter-list" class="space-y-2 text-xs font-semibold text-slate-600">
+              <!-- Render động theo danh sách đối tác -->
+            </div>
+          </div>
+
+          <!-- 4. Loại xe -->
+          <div>
+            <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2.5">Dòng xe</label>
+            <div class="space-y-2 text-xs font-semibold text-slate-600">
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="bus-type" value="Limousine" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+                <span>Limousine VIP</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="bus-type" value="Giường nằm" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+                <span>Xe Giường nằm</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- RIGHT COLUMN: DANH SÁCH CHUYẾN XE (Cards) -->
+      <section class="lg:col-span-8 xl:col-span-9 space-y-4">
+        
+        <!-- Header thông tin số lượng -->
+        <div class="flex items-center justify-between mb-2">
+          <p id="trips-count-label" class="text-sm font-bold text-slate-700">Đang tìm chuyến xe phù hợp...</p>
+          <span class="text-xs text-slate-400 font-medium">Bảo vệ giữ chỗ 100% qua API</span>
+        </div>
+
+        <!-- Container danh sách thẻ chuyến xe -->
+        <div id="trips-container" class="space-y-4">
+          <!-- Skeleton Loading -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs animate-pulse space-y-4">
+            <div class="h-6 bg-slate-200 rounded-xl w-1/3"></div>
+            <div class="h-12 bg-slate-100 rounded-2xl w-full"></div>
+            <div class="h-8 bg-slate-200 rounded-xl w-1/4"></div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 mt-auto text-xs text-center border-t border-slate-800">
+    <p>&copy; 2026 BusTicket Pro Multi-Partner Platform. Hotline: 1900 6868</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="api.js"></script>
+  <script>
+    let allTrips = [];
+    let currentOrigin = '';
+    let currentDest = '';
+    let currentDate = '';
+
+    // Khởi tạo trang
+    (async function init() {
+      renderNavbar('trips');
+
+      // Lấy tham số từ URL
+      const urlParams = new URLSearchParams(window.location.search);
+      currentOrigin = urlParams.get('departurePoint') || 'Hà Nội';
+      currentDest   = urlParams.get('arrivalPoint')   || 'Đà Nẵng';
+      
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const pad = n => String(n).padStart(2, '0');
+      const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+      currentDate   = urlParams.get('departureDate')  || tomorrowStr;
+
+      // Update UI Header
+      updateHeaderSummary();
+
+      // Tải danh sách chuyến
+      await loadTrips();
+    })();
+
+    function updateHeaderSummary() {
+      document.getElementById('summary-origin').textContent = currentOrigin;
+      document.getElementById('summary-destination').textContent = currentDest;
+      document.getElementById('summary-date').textContent = formatDate(currentDate);
+
+      document.getElementById('mod-origin').value = currentOrigin;
+      document.getElementById('mod-dest').value   = currentDest;
+      document.getElementById('mod-date').value   = currentDate;
+    }
+
+    function toggleSearchModifier() {
+      const el = document.getElementById('search-modifier');
+      el.classList.toggle('hidden');
+    }
+
+    function applySearchModifier(event) {
+      event.preventDefault();
+      currentOrigin = document.getElementById('mod-origin').value.trim();
+      currentDest   = document.getElementById('mod-dest').value.trim();
+      currentDate   = document.getElementById('mod-date').value;
+
+      const params = new URLSearchParams({
+        departurePoint: currentOrigin,
+        arrivalPoint: currentDest,
+        departureDate: currentDate
+      });
+      window.history.pushState({}, '', `trips.html?${params.toString()}`);
+      updateHeaderSummary();
+      toggleSearchModifier();
+      loadTrips();
+    }
+
+    function changeDateOffset(offset) {
+      const current = new Date(currentDate);
+      if (offset !== 0) {
+        current.setDate(current.getDate() + offset);
+      }
+      const pad = n => String(n).padStart(2, '0');
+      currentDate = `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())}`;
+      
+      const params = new URLSearchParams({
+        departurePoint: currentOrigin,
+        arrivalPoint: currentDest,
+        departureDate: currentDate
+      });
+      window.history.pushState({}, '', `trips.html?${params.toString()}`);
+      updateHeaderSummary();
+      loadTrips();
+    }
+
+    // Gọi API tìm chuyến xe
+    // GET /api/v1/trips/search?departurePoint=...&arrivalPoint=...&departureDate=...
+    async function loadTrips() {
+      const container = document.getElementById('trips-container');
+      container.innerHTML = `
+        <div class="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-xs">
+          <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="font-bold text-slate-700 text-sm">Đang tìm các chuyến xe tốt nhất...</p>
+        </div>
+      `;
+
+      try {
+        const data = await fetchAPI('/trips/search', 'GET', null, {
+          departurePoint: currentOrigin,
+          arrivalPoint: currentDest,
+          departureDate: currentDate
+        });
+
+        allTrips = Array.isArray(data) ? data : [];
+        populateOperatorFilters();
+        filterAndRenderTrips();
+
+      } catch (err) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-12 text-center border border-rose-200 shadow-xs">
+            <div class="w-16 h-16 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-800 mb-1">Không thể tải chuyến xe</h3>
+            <p class="text-xs text-slate-500 mb-5">Đã xảy ra lỗi kết nối tới máy chủ. Vui lòng kiểm tra lại!</p>
+            <button onclick="loadTrips()" class="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition">
+              <i class="fa-solid fa-rotate-right mr-1.5"></i> Thử lại
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function populateOperatorFilters() {
+      const operators = [...new Set(allTrips.map(t => t.operatorName || 'Nhà xe đối tác'))];
+      const list = document.getElementById('operator-filter-list');
+      if (operators.length === 0) {
+        list.innerHTML = '<span class="text-xs text-slate-400">Không có đối tác</span>';
+        return;
+      }
+      list.innerHTML = operators.map(op => `
+        <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+          <input type="checkbox" name="op-filter" value="${op}" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+          <span class="truncate">${op}</span>
+        </label>
+      `).join('');
+    }
+
+    function filterAndRenderTrips() {
+      const sort = document.getElementById('filter-sort').value;
+      const checkedTimes = Array.from(document.querySelectorAll('input[name="time-filter"]:checked')).map(cb => cb.value);
+      const checkedOps   = Array.from(document.querySelectorAll('input[name="op-filter"]:checked')).map(cb => cb.value);
+      const checkedTypes = Array.from(document.querySelectorAll('input[name="bus-type"]:checked')).map(cb => cb.value);
+
+      let filtered = [...allTrips];
+
+      // Lọc khung giờ
+      if (checkedTimes.length > 0) {
+        filtered = filtered.filter(t => {
+          const hour = new Date(t.departureTime).getHours();
+          if (checkedTimes.includes('morning')   && hour >= 6 && hour < 12) return true;
+          if (checkedTimes.includes('afternoon') && hour >= 12 && hour < 18) return true;
+          if (checkedTimes.includes('evening')   && hour >= 18 && hour < 24) return true;
+          return false;
+        });
+      }
+
+      // Lọc nhà xe
+      if (checkedOps.length > 0) {
+        filtered = filtered.filter(t => checkedOps.includes(t.operatorName));
+      }
+
+      // Lọc loại xe
+      if (checkedTypes.length > 0) {
+        filtered = filtered.filter(t => {
+          const type = t.busType || '';
+          return checkedTypes.some(ct => type.toLowerCase().includes(ct.toLowerCase()));
+        });
+      }
+
+      // Sắp xếp
+      if (sort === 'time-asc') {
+        filtered.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
+      } else if (sort === 'time-desc') {
+        filtered.sort((a, b) => new Date(b.departureTime) - new Date(a.departureTime));
+      } else if (sort === 'price-asc') {
+        filtered.sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
+      } else if (sort === 'price-desc') {
+        filtered.sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
+      }
+
+      renderTripCards(filtered);
+    }
+
+    function resetFilters() {
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('filter-sort').value = 'time-asc';
+      filterAndRenderTrips();
+    }
+
+    function renderTripCards(trips) {
+      const container = document.getElementById('trips-container');
+      const label = document.getElementById('trips-count-label');
+      label.textContent = `Tìm thấy ${trips.length} chuyến xe khả dụng`;
+
+      if (trips.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs">
+            <div class="w-16 h-16 rounded-3xl bg-orange-50 text-orange-500 flex items-center justify-center text-3xl mx-auto mb-4">
+              <i class="fa-solid fa-bus-simple"></i>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-800 mb-1">Không có chuyến xe nào</h3>
+            <p class="text-xs text-slate-500 mb-5">Rất tiếc, không tìm thấy chuyến phù hợp cho ngày này hoặc bộ lọc đã chọn.</p>
+            <div class="flex justify-center gap-3">
+              <button onclick="changeDateOffset(1)" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition">
+                Xem ngày tiếp theo
+              </button>
+              <button onclick="resetFilters()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition">
+                Xóa bộ lọc
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = trips.map(trip => {
+        const depTime = formatTime(trip.departureTime);
+        const arrTime = formatTime(trip.arrivalTime);
+        const depDate = formatDate(trip.departureTime);
+        const opName  = trip.operatorName || 'Nhà xe Đối tác';
+        const opCode  = trip.operatorCode || 'FUTA';
+        const price   = formatVND(trip.basePrice);
+        const busType = trip.busType || 'Giường nằm 36 chỗ';
+        const plate   = trip.busPlateNumber || '—';
+        const availSeats = trip.availableSeats !== undefined ? trip.availableSeats : 36;
+        const totalSeats = trip.totalSeats || 36;
+
+        return `
+          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-orange-200 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+              
+              <!-- Left side: Operator info & Timeline -->
+              <div class="flex-1 space-y-4">
+                
+                <!-- Operator Banner -->
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                      ${opCode}
+                    </div>
+                    <div>
+                      <h4 class="font-extrabold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">${opName}</h4>
+                      <p class="text-[11px] text-slate-400 font-medium">Xe: <span class="text-slate-600 font-semibold">${plate}</span> • ${busType}</p>
+                    </div>
+                  </div>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                    <i class="fa-solid fa-chair text-[10px]"></i>
+                    Còn <strong>${availSeats}</strong>/${totalSeats} chỗ
+                  </span>
+                </div>
+
+                <!-- Timeline Departure -> Arrival -->
+                <div class="grid grid-cols-12 items-center gap-2 pt-2">
+                  <!-- Departure -->
+                  <div class="col-span-4 sm:col-span-3">
+                    <div class="text-xl sm:text-2xl font-black text-slate-900">${depTime}</div>
+                    <div class="text-xs font-bold text-slate-700 truncate">${trip.origin}</div>
+                    <div class="text-[10px] text-slate-400">${depDate}</div>
+                  </div>
+
+                  <!-- Visual Connecting Bar -->
+                  <div class="col-span-4 sm:col-span-6 flex flex-col items-center px-2">
+                    <span class="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                      <i class="fa-solid fa-clock text-[9px]"></i> Tuyến thẳng
+                    </span>
+                    <div class="w-full flex items-center gap-1">
+                      <div class="w-2.5 h-2.5 rounded-full border-2 border-blue-600 bg-white"></div>
+                      <div class="flex-1 h-0.5 bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500"></div>
+                      <i class="fa-solid fa-bus text-xs text-blue-600 mx-0.5"></i>
+                      <div class="flex-1 h-0.5 bg-gradient-to-r from-indigo-500 to-blue-500"></div>
+                      <div class="w-2.5 h-2.5 rounded-full border-2 border-indigo-600 bg-white"></div>
+                    </div>
+                  </div>
+
+                  <!-- Arrival -->
+                  <div class="col-span-4 sm:col-span-3 text-right">
+                    <div class="text-xl sm:text-2xl font-black text-slate-900">${arrTime}</div>
+                    <div class="text-xs font-bold text-slate-700 truncate">${trip.destination}</div>
+                    <div class="text-[10px] text-slate-400">Dự kiến</div>
+                  </div>
+                </div>
+
+                <!-- Amenities tags -->
+                <div class="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-500">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
+                    <i class="fa-solid fa-wifi text-slate-400 text-[10px]"></i> Wifi tốc độ cao
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
+                    <i class="fa-solid fa-bottle-water text-slate-400 text-[10px]"></i> Nước suối & khăn
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
+                    <i class="fa-solid fa-charging-station text-slate-400 text-[10px]"></i> Cổng sạc điện thoại
+                  </span>
+                </div>
+
+              </div>
+
+              <!-- Right side: Price & Action -->
+              <div class="lg:w-48 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-row lg:flex-col items-center lg:items-end justify-between pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                <div class="text-left lg:text-right">
+                  <span class="text-[11px] text-slate-400 font-semibold block">Giá vé từ</span>
+                  <div class="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">${price}</div>
+                  <span class="text-[10px] text-blue-600 font-bold hidden lg:block">✓ Không phụ phí ẩn</span>
+                </div>
+
+                <a href="seat-selection.html?tripId=${trip.tripId}"
+                   onclick="return handleSelectTrip(event, this, ${trip.tripId})"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-sm shadow-md shadow-blue-500/25 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300">
+                  <span>Chọn ghế</span>
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // UX: Chống click spam khi bấm chọn chuyến xe
+    function handleSelectTrip(e, btn, tripId) {
+      if (btn.classList.contains('pointer-events-none')) {
+        e.preventDefault();
+        return false;
+      }
+      btn.classList.add('pointer-events-none', 'opacity-85');
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Đang tải sơ đồ...`;
+      return true;
+    }
+  </script>
+</body>
+</html>

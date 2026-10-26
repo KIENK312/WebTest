@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng Nhập / Đăng Ký – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 text-slate-800 font-sans antialiased flex items-center justify-center p-4 selection:bg-orange-500 selection:text-white">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-md my-8">
+    
+    <!-- Brand Logo -->
+    <div class="text-center mb-6">
+      <a href="index.html" class="inline-flex items-center gap-3 group">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/30 group-hover:scale-105 transition-transform duration-300">
+          <i class="fa-solid fa-bus text-2xl"></i>
+        </div>
+        <div class="text-left">
+          <h1 class="text-2xl font-black text-white tracking-tight leading-none">BusTicket <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Pro</span></h1>
+          <p class="text-xs text-slate-400 font-medium mt-1">Hệ thống Đặt vé Xe khách Đa đối tác</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Quick 1-Click Demo Accounts Card -->
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 sm:p-5 text-white mb-5 shadow-2xl">
+      <div class="flex items-center gap-2 text-xs font-bold text-amber-300 mb-2.5">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Đăng nhập 1-Click (Tài khoản mẫu):</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+        <button type="button" onclick="fillDemo('admin', 'Admin@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">👑</span>
+          <div>
+            <div class="text-amber-300 font-extrabold leading-tight">Admin</div>
+            <div class="text-[10px] text-slate-300 font-normal">Quản trị viên</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('operator_futa', 'Operator@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">🚌</span>
+          <div>
+            <div class="text-orange-300 font-extrabold leading-tight">Nhà xe FUTA</div>
+            <div class="text-[10px] text-slate-300 font-normal">Điều hành xe</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('operator_hoanglong', 'Operator@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">🚌</span>
+          <div>
+            <div class="text-blue-300 font-extrabold leading-tight">Hoàng Long</div>
+            <div class="text-[10px] text-slate-300 font-normal">Nhà xe đối tác</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('customer', 'Customer@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">👤</span>
+          <div>
+            <div class="text-emerald-300 font-extrabold leading-tight">Khách Hàng</div>
+            <div class="text-[10px] text-slate-300 font-normal">Đặt vé xe</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+      
+      <!-- Tabs switch -->
+      <div class="flex border-b border-slate-100">
+        <button id="tab-login" onclick="switchTab('login')"
+                class="flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-orange-600 text-orange-600 bg-orange-50/50 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-lock text-xs"></i> Đăng nhập
+        </button>
+        <button id="tab-register" onclick="switchTab('register')"
+                class="flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-orange-600 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-user-plus text-xs"></i> Đăng ký
+        </button>
+      </div>
+
+      <!-- Form Đăng nhập -->
+      <div id="form-login" class="p-6 sm:p-8">
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên đăng nhập hoặc Email</label>
+            <div class="relative">
+              <input id="login-username" type="text" placeholder="VD: admin hoặc customer" required
+                     class="w-full h-11 pl-10 pr-4 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <i class="fa-regular fa-user text-xs"></i>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Mật khẩu</label>
+            <div class="relative">
+              <input id="login-password" type="password" placeholder="Nhập mật khẩu..." required
+                     class="w-full h-11 pl-10 pr-10 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <i class="fa-solid fa-key text-xs"></i>
+              </div>
+              <button type="button" onclick="togglePassword('login-password', this)"
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-login"
+                  class="w-full h-12 mt-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all hover:scale-[1.01] active:scale-99 flex items-center justify-center gap-2">
+            <span>Đăng Nhập</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Form Đăng ký -->
+      <div id="form-register" class="p-6 sm:p-8 hidden">
+        <form onsubmit="handleRegister(event)" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên</label>
+            <input id="reg-fullname" type="text" placeholder="Nguyễn Văn A" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+            <input id="reg-email" type="email" placeholder="email@example.com" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Số điện thoại</label>
+            <input id="reg-phone" type="tel" placeholder="0901234567" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tên đăng nhập</label>
+            <input id="reg-username" type="text" placeholder="username123" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Mật khẩu</label>
+            <input id="reg-password" type="password" placeholder="Ít nhất 8 ký tự, có số & chữ hoa" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <button type="submit" id="btn-register"
+                  class="w-full h-11 mt-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+            <span>Tạo Tài Khoản Mới</span>
+            <i class="fa-solid fa-user-check text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <div class="text-center mt-5">
+      <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-arrow-left text-[10px]"></i> Quay lại trang chủ
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="api.js"></script>
+  <script>
+    (function init() {
+      if (isLoggedIn()) {
+        window.location.href = 'index.html';
+      }
+    })();
+
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-register').classList.toggle('hidden', isLogin);
+
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg   = document.getElementById('tab-register');
+
+      if (isLogin) {
+        tabLogin.className = 'flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-orange-600 text-orange-600 bg-orange-50/50 flex items-center justify-center gap-1.5';
+        tabReg.className   = 'flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-orange-600 flex items-center justify-center gap-1.5';
+      } else {
+        tabReg.className   = 'flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-emerald-600 text-emerald-600 bg-emerald-50/50 flex items-center justify-center gap-1.5';
+        tabLogin.className = 'flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-emerald-600 flex items-center justify-center gap-1.5';
+      }
+    }
+
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      btn.innerHTML = isPass ? '<i class="fa-regular fa-eye-slash text-xs"></i>' : '<i class="fa-regular fa-eye text-xs"></i>';
+    }
+
+    function fillDemo(username, password) {
+      document.getElementById('login-username').value = username;
+      document.getElementById('login-password').value = password;
+      switchTab('login');
+      showToast(`Đã điền tài khoản: ${username}`, 'info', 1500);
+    }
+
+    // Đăng nhập
+    async function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!username || !password) {
+        showToast('Vui lòng nhập tên đăng nhập và mật khẩu!', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...`;
+
+      try {
+        const result = await fetchAPI('/auth/login', 'POST', {
+          usernameOrEmail: username,
+          password: password,
+        });
+
+        const token = result.accessToken || result.token;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({
+          userId:     result.userId,
+          username:   result.username,
+          fullName:   result.fullName,
+          email:      result.email,
+          phone:      result.phone || result.phoneNumber || '',
+          role:       result.role,
+          operatorId: result.operatorId,
+        }));
+
+        showSuccessModal(
+          `Chào mừng, ${result.fullName || result.username}!`,
+          'Đăng nhập thành công vào hệ sinh thái BusTicket Pro.',
+          () => {
+            const role = result.role || '';
+            if (role.includes('ADMIN')) window.location.href = 'admin.html';
+            else if (role.includes('OPERATOR')) window.location.href = 'operator.html';
+            else window.location.href = 'index.html';
+          }
+        );
+
+      } catch (err) {
+        // Modal lỗi đã xử lý bởi fetchAPI
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Đăng Nhập</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
+      }
+    }
+
+    // Đăng ký
+    async function handleRegister(event) {
+      event.preventDefault();
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const phone    = document.getElementById('reg-phone').value.trim();
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      try {
+        await fetchAPI('/auth/register', 'POST', {
+          fullName, email, phone, username, password
+        });
+
+        showSuccessModal(
+          'Đăng ký thành công!',
+          'Tài khoản của bạn đã được tạo. Vui lòng đăng nhập để bắt đầu trải nghiệm!',
+          () => {
+            document.getElementById('login-username').value = username;
+            document.getElementById('login-password').value = password;
+            switchTab('login');
+          }
+        );
+
+      } catch (err) {
+        // Modal lỗi đã hiển thị
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Nhà xe – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+<script src="api.js"></script>
+
+<div id="navbar"></div>
+
+<main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">🚌 Quản lý Nhà xe</h1>
+    <div class="flex items-center gap-3">
+      <div id="operator-select-container" class="hidden items-center gap-2">
+        <label for="operator-select" class="text-xs font-semibold text-gray-500 uppercase">Nhà xe:</label>
+        <select id="operator-select" onchange="onOperatorChanged()"
+          class="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </select>
+      </div>
+      <div id="operator-name" class="text-sm font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100"></div>
+    </div>
+  </div>
+
+  <!-- Tabs chính -->
+  <div class="flex gap-2 mb-6 border-b border-gray-200 pb-0">
+    <button onclick="switchMainTab('buses')"   id="mtab-buses"   class="mtab mtab-active px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🚌 Đội xe</button>
+    <button onclick="switchMainTab('trips')"   id="mtab-trips"   class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🗓️ Chuyến xe</button>
+    <button onclick="switchMainTab('maintenance')" id="mtab-maintenance" class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🔧 Bảo trì</button>
+  </div>
+
+  <!-- ===== TAB: ĐỘI XE ===== -->
+  <div id="tab-buses" class="tab-content">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold text-gray-700">Danh sách phương tiện</h2>
+      <button onclick="loadBuses()" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">↺ Làm mới</button>
+    </div>
+    <div id="bus-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="col-span-3 text-center py-10 text-gray-400">Đang tải danh sách xe...</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: CHUYẾN XE ===== -->
+  <div id="tab-trips" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold text-gray-700">Danh sách chuyến xe</h2>
+      <button onclick="openCreateTripModal()"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition">
+        ➕ Tạo chuyến mới
+      </button>
+    </div>
+    <div id="trip-list-op" class="space-y-3">
+      <div class="text-center py-10 text-gray-400">Đang tải danh sách chuyến xe...</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: BẢO TRÌ ===== -->
+  <div id="tab-maintenance" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold text-gray-700">Lịch bảo trì xe</h2>
+      <button onclick="openMaintenanceModal()"
+        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-xl text-sm transition">
+        📅 Lên lịch bảo trì
+      </button>
+    </div>
+    <div id="maintenance-list" class="space-y-3">
+      <div class="text-center py-10 text-gray-400">Chọn tab Đội xe và nhấn "Xem lịch bảo trì" trên từng xe.</div>
+    </div>
+  </div>
+</main>
+
+<!-- ===== MODAL TẠO CHUYẾN XE ===== -->
+<div id="create-trip-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4">
+    <div class="flex items-center justify-between p-6 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-800">➕ Tạo chuyến xe mới</h3>
+      <button onclick="closeCreateTripModal()" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <form id="create-trip-form" onsubmit="submitCreateTrip(event)" class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Xe (Bus)</label>
+        <select id="trip-bus" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+          <option value="">-- Chọn xe --</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Tuyến đường (Route)</label>
+        <select id="trip-route" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+          <option value="">-- Chọn tuyến đường --</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Giờ khởi hành</label>
+          <input type="datetime-local" id="trip-departure" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Giờ đến (dự kiến)</label>
+          <input type="datetime-local" id="trip-arrival" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Giá vé (VNĐ)</label>
+        <input type="number" id="trip-price" placeholder="VD: 250000" min="10000" step="5000" required
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+        ⚠️ Nếu xe đang trong lịch bảo trì hoặc đệm thời gian 48h, hệ thống sẽ từ chối tạo chuyến!
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeCreateTripModal()"
+          class="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">
+          Hủy
+        </button>
+        <button type="submit" id="btn-create-trip"
+          class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition">
+          ✅ Tạo chuyến xe
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MODAL LÊN LỊCH BẢO TRÌ ===== -->
+<div id="maintenance-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between p-6 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-800">🔧 Lên lịch bảo trì xe</h3>
+      <button onclick="closeMaintenanceModal()" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <form id="maintenance-form" onsubmit="submitMaintenance(event)" class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Chọn xe</label>
+        <select id="maint-bus" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+          <option value="">-- Chọn xe cần bảo trì --</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Bắt đầu bảo trì</label>
+          <input type="datetime-local" id="maint-start" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Kết thúc bảo trì</label>
+          <input type="datetime-local" id="maint-end" required
+            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Ghi chú / Lý do</label>
+        <textarea id="maint-note" rows="3" placeholder="VD: Thay dầu định kỳ, kiểm tra hệ thống phanh..."
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+      </div>
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-800">
+        ⚠️ <strong>Quy tắc 48h:</strong> Hệ thống sẽ kiểm tra xem xe có chuyến SCHEDULED trong khoảng
+        <em>(StartTime - 48h)</em> đến <em>(EndTime + 48h)</em>. Nếu có xung đột, lịch bảo trì sẽ bị từ chối.
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeMaintenanceModal()"
+          class="flex-1 border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">
+          Hủy
+        </button>
+        <button type="submit" id="btn-maintenance"
+          class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-sm transition">
+          📅 Lên lịch bảo trì
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="bg-gray-800 text-gray-400 text-center py-6 mt-auto text-sm">
+  <p>🚌 <strong class="text-white">BusTicket Pro</strong> &copy; 2025</p>
+</footer>
+
+<style>
+  .mtab { background: white; color: #6b7280; }
+  .mtab:hover { background: #eef2ff; color: #4338ca; }
+  .mtab-active { background: #4f46e5 !important; color: white !important; border-color: #4f46e5 !important; }
+</style>
+
+<script>
+  let buses     = [];
+  let routes    = [];
+  let trips     = [];
+  let partners  = [];
+  let currentOpId = null;
+
+  // ===== KHỞI TẠO =====
+  (async function init() {
+    if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
+    const user = getCurrentUser();
+    const role = user?.role || '';
+    if (!role.includes('OPERATOR') && !role.includes('ADMIN')) {
+      showToast('Bạn không có quyền truy cập trang này!', 'error');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+      return;
+    }
+    renderNavbar('operator');
+    document.getElementById('operator-name').textContent = `👤 ${user?.fullName || user?.username}`;
+
+    // Khởi tạo nhà xe hiện tại
+    currentOpId = user?.operatorId || null;
+
+    // Nếu là admin hoặc có thể quản lý nhiều nhà xe, nạp danh sách đối tác
+    await loadPartnerSelector();
+    await reloadAllData();
+  })();
+
+  // Lấy ID nhà xe đang được chọn
+  function getSelectedOperatorId() {
+    const sel = document.getElementById('operator-select');
+    if (sel && sel.value) {
+      return Number(sel.value);
+    }
+    return currentOpId;
+  }
+
+  // Tải danh sách nhà xe để chuyển đổi (dành cho Admin hoặc chọn nhà xe)
+  async function loadPartnerSelector() {
+    try {
+      const data = await fetchAPI('/admin/partners');
+      partners = Array.isArray(data) ? data : [];
+      if (partners.length > 0) {
+        const container = document.getElementById('operator-select-container');
+        const select = document.getElementById('operator-select');
+        select.innerHTML = partners.map(p => 
+          `<option value="${p.id}" ${p.id === currentOpId ? 'selected' : ''}>${p.name} (${p.code})</option>`
+        ).join('');
+
+        if (!currentOpId && partners.length > 0) {
+          currentOpId = partners[0].id;
+        }
+        container.classList.remove('hidden');
+        container.classList.add('flex');
+      }
+    } catch (e) {
+      // Bỏ qua nếu không phải Admin hoặc endpoint không khả dụng
+    }
+  }
+
+  async function onOperatorChanged() {
+    const sel = document.getElementById('operator-select');
+    currentOpId = Number(sel.value);
+    await reloadAllData();
+  }
+
+  async function reloadAllData() {
+    await Promise.all([loadBuses(), loadRoutes(), loadTrips()]);
+  }
+
+  // ===== CHUYỂN TAB =====
+  function switchMainTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.mtab').forEach(el => el.classList.remove('mtab-active'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    document.getElementById(`mtab-${tab}`).classList.add('mtab-active');
+  }
+
+  // ===== TẢI DANH SÁCH XE =====
+  // GET /api/v1/operator/buses?operatorId=...
+  async function loadBuses() {
+    try {
+      const opId = getSelectedOperatorId();
+      const params = opId ? { operatorId: opId } : null;
+      const data = await fetchAPI('/operator/buses', 'GET', null, params);
+      buses = Array.isArray(data) ? data : [];
+      renderBusList();
+      populateBusSelects();
+    } catch (err) {
+      document.getElementById('bus-list').innerHTML =
+        '<div class="col-span-3 text-center py-10 text-red-400">Không thể tải danh sách xe!</div>';
+    }
+  }
+
+  function renderBusList() {
+    const list = document.getElementById('bus-list');
+    if (buses.length === 0) {
+      list.innerHTML = '<div class="col-span-3 text-center py-10 text-gray-400">Chưa có xe nào trong đội.</div>';
+      return;
+    }
+
+    list.innerHTML = buses.map(bus => {
+      const isMaintenance = bus.status === 'MAINTENANCE';
+      const isActive      = bus.status === 'ACTIVE';
+      const plate         = bus.plateNumber || bus.licensePlate || '—';
+      return `
+        <div class="bg-white rounded-2xl shadow border ${isMaintenance ? 'border-orange-200 ring-2 ring-orange-200' : 'border-gray-100'} p-5 hover:shadow-md transition">
+          <!-- Header xe -->
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="text-lg font-bold text-gray-800">🚌 ${plate}</div>
+              <div class="text-xs text-gray-400 mt-0.5">${bus.busTypeName || bus.busType || 'Xe khách'}</div>
+            </div>
+            ${statusBadge(bus.status)}
+          </div>
+
+          <div class="text-sm text-gray-600 mb-4 space-y-1">
+            <div>🪑 Tổng ghế: <strong>${bus.totalSeats || '—'}</strong></div>
+            <div>🏢 Nhà xe: <strong>${bus.operatorName || '—'}</strong></div>
+          </div>
+
+          ${isMaintenance ? `
+            <div class="bg-orange-50 border border-orange-200 rounded-xl p-2.5 mb-3 text-xs text-orange-700 font-medium flex items-center gap-1.5">
+              <span>⚠️</span> Xe đang bảo trì – hệ thống sẽ chặn phân công vào chuyến mới!
+            </div>
+          ` : ''}
+
+          <!-- Actions -->
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="toggleBusStatus(${bus.id}, '${bus.status}')"
+              class="${isActive
+                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'}
+              text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+              ${isActive ? '🔧 Đưa vào bảo trì' : '✅ Kích hoạt lại'}
+            </button>
+            <button onclick="viewMaintenanceLogs(${bus.id}, '${plate}')"
+              class="bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+              📋 Lịch sử bảo trì
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ===== ĐỔI TRẠNG THÁI XE =====
+  // PUT /api/v1/operator/buses/{busId}/status?status=MAINTENANCE|ACTIVE
+  async function toggleBusStatus(busId, currentStatus) {
+    const newStatus = currentStatus === 'ACTIVE' ? 'MAINTENANCE' : 'ACTIVE';
+    const confirmMsg = newStatus === 'MAINTENANCE'
+      ? `Đưa xe vào trạng thái BẢO TRÌ? Xe sẽ không thể phân công vào chuyến mới!`
+      : `Kích hoạt lại xe? Xe sẽ trở về trạng thái ACTIVE.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    showLoading(true);
+    try {
+      await fetchAPI(`/operator/buses/${busId}/status`, 'PUT', { status: newStatus }, { status: newStatus });
+      showToast(`Đã chuyển trạng thái xe sang ${newStatus}!`, 'success');
+      await loadBuses();
+    } catch (err) {
+      // Toast đã hiển thị
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // ===== XEM LỊCH SỬ BẢO TRÌ =====
+  // GET /api/v1/operator/maintenance/bus/{busId}
+  async function viewMaintenanceLogs(busId, plateNumber) {
+    switchMainTab('maintenance');
+    const list = document.getElementById('maintenance-list');
+    list.innerHTML = '<div class="text-center py-8 text-gray-400">Đang tải lịch sử bảo trì...</div>';
+
+    try {
+      const logs = await fetchAPI(`/operator/maintenance/bus/${busId}`);
+      const data  = Array.isArray(logs) ? logs : [];
+
+      if (data.length === 0) {
+        list.innerHTML = `<div class="text-center py-10 text-gray-400">
+          <div class="text-4xl mb-3">🔧</div>
+          <p class="font-medium">Xe <strong>${plateNumber}</strong> chưa có lịch sử bảo trì nào.</p>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = `
+        <h3 class="font-bold text-gray-700 mb-3">📋 Lịch sử bảo trì xe: <span class="text-indigo-600 font-extrabold">${plateNumber}</span></h3>
+        <div class="space-y-3">
+          ${data.map(log => `
+            <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    ${statusBadge(log.status)}
+                    <span class="text-xs text-gray-400">ID: #${log.maintenanceLogId || log.id}</span>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">${log.maintenanceType || 'PERIODIC'}</span>
+                  </div>
+                  <div class="text-sm text-gray-700 space-y-0.5">
+                    <div>🕐 Bắt đầu: <strong>${formatDateTime(log.startTime)}</strong></div>
+                    <div>🕕 Kết thúc: <strong>${log.endTime ? formatDateTime(log.endTime) : 'Chưa kết thúc'}</strong></div>
+                    ${(log.description || log.notes) ? `<div class="text-gray-500 mt-1">📝 ${log.description || log.notes}</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch (err) {
+      list.innerHTML = '<div class="text-center py-8 text-red-400">Không thể tải lịch sử bảo trì!</div>';
+    }
+  }
+
+  // ===== TẢI TUYẾN ĐƯỜNG =====
+  // GET /api/v1/operator/routes
+  async function loadRoutes() {
+    try {
+      const opId = getSelectedOperatorId();
+      const params = opId ? { operatorId: opId } : null;
+      const data = await fetchAPI('/operator/routes', 'GET', null, params);
+      routes = Array.isArray(data) ? data : [];
+      populateRouteSelects();
+    } catch (err) { /* bỏ qua */ }
+  }
+
+  // ===== TẢI CHUYẾN XE =====
+  // GET /api/v1/operator/trips
+  async function loadTrips() {
+    try {
+      const opId = getSelectedOperatorId();
+      const params = opId ? { operatorId: opId } : null;
+      const data = await fetchAPI('/operator/trips', 'GET', null, params);
+      trips = Array.isArray(data) ? data : [];
+      renderTripList();
+    } catch (err) {
+      document.getElementById('trip-list-op').innerHTML =
+        '<div class="text-center py-10 text-red-400">Không thể tải danh sách chuyến xe!</div>';
+    }
+  }
+
+  function renderTripList() {
+    const list = document.getElementById('trip-list-op');
+    if (trips.length === 0) {
+      list.innerHTML = '<div class="text-center py-10 text-gray-400">Chưa có chuyến xe nào. Hãy tạo chuyến mới!</div>';
+      return;
+    }
+
+    list.innerHTML = trips.map(trip => {
+      const tripId = trip.tripId || trip.id;
+      const origin = trip.origin || trip.departurePoint;
+      const destination = trip.destination || trip.arrivalPoint;
+      const price = trip.basePrice || trip.price;
+      const plate = trip.busPlateNumber || trip.busLicensePlate || trip.plateNumber || '—';
+      return `
+      <div class="bg-white rounded-xl shadow border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            ${statusBadge(trip.status)}
+            <span class="text-xs text-gray-400 font-mono">ID: #${tripId}</span>
+            <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">Xe: ${plate}</span>
+          </div>
+          <div class="font-bold text-gray-800 text-base">${origin} → ${destination}</div>
+          <div class="text-sm text-gray-500 mt-0.5">
+            🕐 ${formatDateTime(trip.departureTime)}
+            &nbsp;|&nbsp; 💰 ${formatVND(price)}
+            &nbsp;|&nbsp; 🪑 Còn <span class="font-semibold text-gray-700">${trip.availableSeats ?? '?'}</span>/${trip.totalSeats || '?'} ghế
+          </div>
+        </div>
+      </div>
+    `}).join('');
+  }
+
+  // ===== POPULATE SELECT XE =====
+  function populateBusSelects() {
+    const activeBuses = buses.filter(b => b.status === 'ACTIVE');
+    const allOptions  = buses.map(b => `<option value="${b.id}">${b.plateNumber || b.licensePlate} – ${b.busTypeName || b.busType} (${b.status})</option>`).join('');
+    const actOptions  = activeBuses.map(b => `<option value="${b.id}">${b.plateNumber || b.licensePlate} – ${b.busTypeName || b.busType}</option>`).join('');
+
+    document.getElementById('trip-bus').innerHTML   = `<option value="">-- Chọn xe --</option>${actOptions}`;
+    document.getElementById('maint-bus').innerHTML  = `<option value="">-- Chọn xe --</option>${allOptions}`;
+  }
+
+  // ===== POPULATE SELECT TUYẾN ĐƯỜNG =====
+  function populateRouteSelects() {
+    const opts = routes.map(r => `<option value="${r.id}">${r.origin || r.departurePoint} → ${r.destination || r.arrivalPoint} (${r.distanceKm || '?'} km)</option>`).join('');
+    document.getElementById('trip-route').innerHTML = `<option value="">-- Chọn tuyến đường --</option>${opts}`;
+  }
+
+  // ===== MỞ MODAL TẠO CHUYẾN XE =====
+  function openCreateTripModal() {
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    const defaultDep = new Date(now.getTime() + 60 * 60000);
+    const defaultArr = new Date(now.getTime() + 8 * 3600000);
+
+    document.getElementById('trip-departure').value = toLocalISOString(defaultDep);
+    document.getElementById('trip-arrival').value   = toLocalISOString(defaultArr);
+    document.getElementById('trip-price').value     = '';
+
+    const modal = document.getElementById('create-trip-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeCreateTripModal() {
+    document.getElementById('create-trip-modal').classList.add('hidden');
+    document.getElementById('create-trip-modal').classList.remove('flex');
+  }
+
+  // ===== TẠO CHUYẾN XE =====
+  // POST /api/v1/operator/trips
+  // Body: { busId, routeId, departureTime, arrivalTime, basePrice }
+  async function submitCreateTrip(event) {
+    event.preventDefault();
+    const busId       = document.getElementById('trip-bus').value;
+    const routeId     = document.getElementById('trip-route').value;
+    const departure   = document.getElementById('trip-departure').value;
+    const arrival     = document.getElementById('trip-arrival').value;
+    const price       = document.getElementById('trip-price').value;
+
+    if (!busId || !routeId || !departure || !arrival || !price) {
+      showToast('Vui lòng điền đầy đủ thông tin chuyến xe!', 'warning');
+      return;
+    }
+
+    if (new Date(departure) >= new Date(arrival)) {
+      showToast('Giờ khởi hành phải trước giờ đến!', 'warning');
+      return;
+    }
+
+    const btn    = document.getElementById('btn-create-trip');
+    btn.disabled = true;
+    btn.textContent = 'Đang tạo...';
+    showLoading(true);
+
+    try {
+      await fetchAPI('/operator/trips', 'POST', {
+        busId:         Number(busId),
+        routeId:       Number(routeId),
+        departureTime: departure,
+        arrivalTime:   arrival,
+        basePrice:     Number(price),
+        price:         Number(price),
+      });
+
+      showToast('✅ Tạo chuyến xe thành công!', 'success', 3000);
+      closeCreateTripModal();
+      await loadTrips();
+      switchMainTab('trips');
+    } catch (err) {
+      // Toast 409 (xe bảo trì 48h) đã hiển thị
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '✅ Tạo chuyến xe';
+      showLoading(false);
+    }
+  }
+
+  // ===== MỞ MODAL BẢO TRÌ =====
+  function openMaintenanceModal() {
+    const now   = new Date();
+    const start = new Date(now.getTime() + 3600000);
+    const end   = new Date(now.getTime() + 3600000 + 4 * 3600000);
+    document.getElementById('maint-start').value = toLocalISOString(start);
+    document.getElementById('maint-end').value   = toLocalISOString(end);
+    document.getElementById('maint-note').value  = '';
+
+    const modal = document.getElementById('maintenance-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeMaintenanceModal() {
+    document.getElementById('maintenance-modal').classList.add('hidden');
+    document.getElementById('maintenance-modal').classList.remove('flex');
+  }
+
+  // ===== LÊN LỊCH BẢO TRÌ =====
+  // POST /api/v1/operator/maintenance
+  // Body: { busId, startTime, endTime, maintenanceType, description, cost }
+  async function submitMaintenance(event) {
+    event.preventDefault();
+    const busId = document.getElementById('maint-bus').value;
+    const start = document.getElementById('maint-start').value;
+    const end   = document.getElementById('maint-end').value;
+    const notes = document.getElementById('maint-note').value.trim();
+
+    if (!busId || !start || !end) {
+      showToast('Vui lòng chọn xe và nhập đầy đủ thời gian bảo trì!', 'warning');
+      return;
+    }
+
+    if (new Date(start) >= new Date(end)) {
+      showToast('Thời gian bắt đầu phải trước thời gian kết thúc!', 'warning');
+      return;
+    }
+
+    const btn    = document.getElementById('btn-maintenance');
+    btn.disabled = true;
+    btn.textContent = 'Đang kiểm tra xung đột 48h...';
+    showLoading(true);
+
+    try {
+      await fetchAPI('/operator/maintenance', 'POST', {
+        busId:           Number(busId),
+        startTime:       start,
+        endTime:         end,
+        maintenanceType: 'PERIODIC',
+        description:     notes || 'Bảo trì định kỳ phương tiện',
+        notes:           notes || 'Bảo trì định kỳ phương tiện',
+        cost:            0,
+      });
+
+      showToast('✅ Lên lịch bảo trì thành công!', 'success', 3000);
+      closeMaintenanceModal();
+      await loadBuses();
+      switchMainTab('maintenance');
+
+      // Tải lại lịch sử bảo trì của xe vừa lên lịch
+      const selectedBus = buses.find(b => b.id === Number(busId));
+      if (selectedBus) {
+        const plate = selectedBus.plateNumber || selectedBus.licensePlate;
+        viewMaintenanceLogs(selectedBus.id, plate);
+      }
+    } catch (err) {
+      // Toast 409 (xung đột 48h với chuyến SCHEDULED) đã hiển thị bởi fetchAPI
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '📅 Lên lịch bảo trì';
+      showLoading(false);
+    }
+  }
+
+  // ===== HELPER: Chuyển Date sang datetime-local string =====
+  function toLocalISOString(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+</script>
+</body>
+</html>

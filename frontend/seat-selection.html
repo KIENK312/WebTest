@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sơ Đồ Chọn Ghế Xe Khách – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    /* Ghế xe khách tương tác cao */
+    .seat-btn {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .seat-btn:hover:not(.seat-booked):not(.seat-selected) {
+      transform: translateY(-2px) scale(1.05);
+      border-color: #2563eb;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .seat-selected {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+      color: #ffffff !important;
+      border-color: #1e40af !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 8px 16px rgba(37, 99, 235, 0.3);
+      animation: seatPulse 2s infinite;
+    }
+    .seat-booked {
+      background-color: #e2e8f0 !important;
+      border-color: #cbd5e1 !important;
+      color: #94a3b8 !important;
+      cursor: not-allowed !important;
+      opacity: 0.65;
+    }
+    @keyframes seatPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Breadcrumb & Header info -->
+  <div class="bg-white border-b border-slate-200/80 py-4 shadow-2xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="javascript:history.back()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-orange-50 text-slate-600 hover:text-orange-600 flex items-center justify-center transition shadow-2xs">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h1 id="trip-title" class="text-base sm:text-lg font-black text-slate-900">Đang tải thông tin chuyến...</h1>
+          <p id="trip-subtitle" class="text-xs text-slate-500 font-medium">Chọn ghế yêu thích của bạn</p>
+        </div>
+      </div>
+      <div class="hidden sm:flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
+          <i class="fa-solid fa-shield-check"></i> Giữ chỗ tức thì 10 phút
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Booking Interface -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT / CENTER: SƠ ĐỒ XE 2 TẦNG (Seat Map) -->
+      <section class="lg:col-span-7 xl:col-span-8 space-y-6">
+        
+        <!-- Legend (Mã màu ghế) -->
+        <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-around flex-wrap gap-4 text-xs font-bold">
+          <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 rounded-lg border-2 border-slate-300 bg-white shadow-2xs"></div>
+            <span class="text-slate-600">Ghế trống</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-blue-600 border-2 border-blue-700 shadow-2xs animate-pulse"></div>
+            <span class="text-blue-700 font-extrabold">Đang chọn</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-slate-200 border-2 border-slate-300 flex items-center justify-center text-slate-400 text-[10px]">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <span class="text-slate-400">Đã bán / Khóa</span>
+          </div>
+        </div>
+
+        <!-- Floor Tabs (Tầng 1 / Tầng 2) -->
+        <div class="flex gap-3">
+          <button onclick="switchFloor(1)" id="btn-floor-1" class="flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-blue-600 text-white border-blue-600 shadow-blue-500/20">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Tầng 1 (Tầng dưới)</span>
+          </button>
+          <button onclick="switchFloor(2)" id="btn-floor-2" class="flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
+            <i class="fa-solid fa-stairs"></i>
+            <span>Tầng 2 (Tầng trên)</span>
+          </button>
+        </div>
+
+        <!-- Bus Physical Cockpit & Cabin Wrapper -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden">
+          
+          <!-- Bus Front Cockpit -->
+          <div class="flex items-center justify-between pb-6 mb-6 border-b border-dashed border-slate-200">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <i class="fa-solid fa-door-open text-base text-slate-500"></i>
+              <span>Cửa lên xe</span>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 flex flex-col items-center justify-center text-slate-600 shadow-inner">
+              <i class="fa-solid fa-dharmachakra text-xl animate-spin-slow"></i>
+              <span class="text-[9px] font-bold mt-0.5">Tài xế</span>
+            </div>
+          </div>
+
+          <!-- Floor 1 Container -->
+          <div id="floor-1-container" class="space-y-4">
+            <div class="text-center py-10 text-slate-400">
+              <div class="w-10 h-10 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-3"></div>
+              <span>Đang tải sơ đồ ghế Tầng 1...</span>
+            </div>
+          </div>
+
+          <!-- Floor 2 Container -->
+          <div id="floor-2-container" class="space-y-4 hidden">
+            <div class="text-center py-10 text-slate-400">
+              <div class="w-10 h-10 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-3"></div>
+              <span>Đang tải sơ đồ ghế Tầng 2...</span>
+            </div>
+          </div>
+
+          <!-- Bus Back End -->
+          <div class="mt-8 pt-4 border-t border-dashed border-slate-200 text-center">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Cuối xe</span>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- RIGHT SIDE: STICKY BOOKING SUMMARY BOX -->
+      <aside class="lg:col-span-5 xl:col-span-4 sticky top-24 space-y-5">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-lg">
+          
+          <h3 class="text-base font-extrabold text-slate-900 pb-3 border-b border-slate-100 mb-4 flex items-center justify-between">
+            <span>Thông tin đặt vé</span>
+            <span class="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">1 Chuyến xe</span>
+          </h3>
+
+          <!-- Tóm tắt chuyến -->
+          <div class="space-y-2 mb-4 text-xs font-semibold text-slate-600">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Tuyến đường:</span>
+              <strong id="sum-route" class="text-slate-800">Đang tải...</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Khởi hành:</span>
+              <strong id="sum-dep-time" class="text-slate-800">--:--</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Nhà xe:</span>
+              <strong id="sum-operator" class="text-slate-800">—</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Loại xe:</span>
+              <strong id="sum-bus-type" class="text-slate-800">—</strong>
+            </div>
+          </div>
+
+          <!-- Ghế đã chọn -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 mb-5">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-bold text-slate-500 uppercase">Ghế đang chọn:</span>
+              <span id="selected-seats-count" class="font-extrabold text-orange-600">0 ghế</span>
+            </div>
+            <div id="selected-seats-pills" class="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+              <span class="text-xs text-slate-400 italic">Vui lòng nhấp chọn ghế trên sơ đồ</span>
+            </div>
+          </div>
+
+          <!-- Form thông tin khách hàng -->
+          <form id="booking-form" onsubmit="submitHoldSeats(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Họ và tên hành khách <span class="text-rose-500">*</span></label>
+              <input type="text" id="cust-name" required placeholder="VD: Nguyễn Văn An"
+                     class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Số điện thoại <span class="text-rose-500">*</span></label>
+              <input type="tel" id="cust-phone" required placeholder="0901234567"
+                     class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Email nhận vé điện tử <span class="text-rose-500">*</span></label>
+              <input type="email" id="cust-email" required placeholder="email@example.com"
+                     class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition" />
+            </div>
+
+            <!-- Tổng tiền -->
+            <div class="pt-4 border-t border-slate-100 flex items-baseline justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-400 block">Tổng thanh toán:</span>
+                <span class="text-[10px] text-slate-400">Đã bao gồm thuế & phí</span>
+              </div>
+              <div id="total-amount-display" class="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">
+                0 đ
+              </div>
+            </div>
+
+            <!-- Nút Giữ chỗ & Thanh toán -->
+            <button type="submit" id="btn-submit-hold"
+                    class="w-full h-13 mt-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-sm shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-98 transition-all duration-300 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-lock text-xs"></i>
+              <span>Tiếp Tục Thanh Toán</span>
+            </button>
+          </form>
+
+          <p class="text-[11px] text-slate-400 text-center mt-3">
+            🔒 Thông tin được bảo mật qua mã hóa SSL 256-bit
+          </p>
+
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 mt-auto text-xs text-center border-t border-slate-800">
+    <p>&copy; 2026 BusTicket Pro Multi-Partner Platform. Hotline: 1900 6868</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="api.js"></script>
+  <script>
+    let tripId = null;
+    let tripInfo = null;
+    let allSeats = [];
+    let selectedSeats = []; // Danh sách object { seatId, seatNumber, price }
+
+    (async function init() {
+      renderNavbar();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      tripId = urlParams.get('tripId');
+
+      if (!tripId) {
+        showErrorModal('Thiếu thông tin', 'Không tìm thấy mã chuyến xe!');
+        setTimeout(() => { window.location.href = 'trips.html'; }, 2000);
+        return;
+      }
+
+      // Điền sẵn thông tin user nếu đã đăng nhập
+      const user = getCurrentUser();
+      if (user) {
+        document.getElementById('cust-name').value  = user.fullName || '';
+        document.getElementById('cust-phone').value = user.phone || user.phoneNumber || '';
+        document.getElementById('cust-email').value = user.email || '';
+      }
+
+      await loadSeatsData();
+    })();
+
+    // Lấy danh sách ghế từ Backend
+    // GET /api/v1/trips/{id}/seats
+    async function loadSeatsData() {
+      try {
+        const seats = await fetchAPI(`/trips/${tripId}/seats`);
+        allSeats = Array.isArray(seats) ? seats : [];
+
+        // Tìm thêm thông tin chuyến xe
+        renderSeatMap();
+        updateSummaryHeader();
+
+      } catch (err) {
+        // Modal lỗi đã hiển thị
+      }
+    }
+
+    function updateSummaryHeader() {
+      if (allSeats.length > 0) {
+        document.getElementById('trip-title').textContent = `Chuyến #${tripId}`;
+        document.getElementById('sum-route').textContent = `Chuyến xe #${tripId}`;
+        const samplePrice = allSeats[0]?.price || 0;
+        document.getElementById('sum-bus-type').textContent = allSeats[0]?.seatType || 'Giường nằm';
+      }
+    }
+
+    // Chuyển đổi hiển thị Tầng 1 / Tầng 2
+    function switchFloor(floorNum) {
+      const btn1 = document.getElementById('btn-floor-1');
+      const btn2 = document.getElementById('btn-floor-2');
+      const f1 = document.getElementById('floor-1-container');
+      const f2 = document.getElementById('floor-2-container');
+
+      if (floorNum === 1) {
+        f1.classList.remove('hidden');
+        f2.classList.add('hidden');
+        btn1.className = 'flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-orange-600 text-white border-orange-600 shadow-orange-500/20';
+        btn2.className = 'flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+      } else {
+        f2.classList.remove('hidden');
+        f1.classList.add('hidden');
+        btn2.className = 'flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-orange-600 text-white border-orange-600 shadow-orange-500/20';
+        btn1.className = 'flex-1 py-3 px-4 rounded-2xl font-extrabold text-sm border transition-all duration-300 flex items-center justify-center gap-2 shadow-xs bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+      }
+    }
+
+    // Render sơ đồ ghế 2 tầng
+    function renderSeatMap() {
+      const f1 = document.getElementById('floor-1-container');
+      const f2 = document.getElementById('floor-2-container');
+
+      const floor1Seats = allSeats.filter(s => s.floorNumber === 1);
+      const floor2Seats = allSeats.filter(s => s.floorNumber === 2);
+
+      f1.innerHTML = generateFloorGrid(floor1Seats, 1);
+      f2.innerHTML = generateFloorGrid(floor2Seats, 2);
+    }
+
+    function generateFloorGrid(seats, floorNum) {
+      if (seats.length === 0) {
+        return `<p class="text-center py-6 text-slate-400 text-xs">Không có ghế ở tầng này</p>`;
+      }
+
+      // Chia thành 2 hàng hoặc 3 hàng thực tế (Ghế dãy trái, lối đi, dãy phải)
+      let html = `<div class="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4 max-w-lg mx-auto">`;
+
+      seats.forEach(seat => {
+        const isBooked = seat.status === 'BOOKED' || seat.status === 'HELD';
+        const isSelected = selectedSeats.some(s => s.seatId === seat.seatId);
+        
+        let cls = 'bg-white border-2 border-slate-200 text-slate-700 shadow-2xs';
+        let disabledAttr = '';
+        let icon = `<i class="fa-solid fa-chair text-xs mb-1 opacity-70"></i>`;
+
+        if (isBooked) {
+          cls = 'seat-booked';
+          disabledAttr = 'disabled';
+          icon = `<i class="fa-solid fa-lock text-xs mb-1"></i>`;
+        } else if (isSelected) {
+          cls = 'seat-selected';
+          icon = `<i class="fa-solid fa-check text-xs mb-1"></i>`;
+        }
+
+        html += `
+          <button type="button" ${disabledAttr} onclick="toggleSeatSelection(${seat.seatId}, '${seat.seatNumber}', ${seat.price})"
+                  class="seat-btn ${cls} h-16 sm:h-18 rounded-2xl flex flex-col items-center justify-center p-2 relative font-black text-xs">
+            ${icon}
+            <span>${seat.seatNumber}</span>
+            <span class="text-[9px] font-semibold opacity-75">${Math.round(seat.price / 1000)}k</span>
+          </button>
+        `;
+      });
+
+      html += `</div>`;
+      return html;
+    }
+
+    // Xử lý chọn / hủy chọn ghế
+    function toggleSeatSelection(seatId, seatNumber, price) {
+      const idx = selectedSeats.findIndex(s => s.seatId === seatId);
+      if (idx >= 0) {
+        // Đã chọn -> bỏ chọn
+        selectedSeats.splice(idx, 1);
+      } else {
+        // Giới hạn chọn tối đa 4 ghế mỗi lần
+        if (selectedSeats.length >= 4) {
+          showToast('Bạn chỉ được chọn tối đa 4 ghế trong một lần đặt!', 'warning');
+          return;
+        }
+        selectedSeats.push({ seatId, seatNumber, price });
+      }
+
+      renderSeatMap();
+      updateBookingSummary();
+    }
+
+    function updateBookingSummary() {
+      const countEl = document.getElementById('selected-seats-count');
+      const pillsEl = document.getElementById('selected-seats-pills');
+      const totalEl = document.getElementById('total-amount-display');
+
+      countEl.textContent = `${selectedSeats.length} ghế`;
+
+      if (selectedSeats.length === 0) {
+        pillsEl.innerHTML = `<span class="text-xs text-slate-400 italic">Vui lòng nhấp chọn ghế trên sơ đồ</span>`;
+        totalEl.textContent = '0 đ';
+        return;
+      }
+
+      pillsEl.innerHTML = selectedSeats.map(s => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 font-extrabold text-xs border border-emerald-200">
+          ${s.seatNumber}
+          <button type="button" onclick="toggleSeatSelection(${s.seatId}, '${s.seatNumber}', ${s.price})" class="hover:text-rose-600">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        </span>
+      `).join('');
+
+      const total = selectedSeats.reduce((sum, s) => sum + Number(s.price), 0);
+      totalEl.textContent = formatVND(total);
+    }
+
+    // Gửi yêu cầu Giữ chỗ (Hold Seats)
+    // POST /api/v1/tickets/hold
+    // Body: { tripId, seatId, customerName, customerPhone, customerEmail, userId }
+    async function submitHoldSeats(event) {
+      event.preventDefault();
+
+      if (selectedSeats.length === 0) {
+        showToast('Vui lòng chọn ít nhất 1 ghế trước khi tiếp tục!', 'warning');
+        return;
+      }
+
+      const name  = document.getElementById('cust-name').value.trim();
+      const phone = document.getElementById('cust-phone').value.trim();
+      const email = document.getElementById('cust-email').value.trim();
+
+      if (!name || !phone || !email) {
+        showToast('Vui lòng điền đầy đủ thông tin hành khách!', 'warning');
+        return;
+      }
+
+      const user = getCurrentUser();
+      const btn = document.getElementById('btn-submit-hold');
+
+      await withButtonLoading(btn, async () => {
+        try {
+          // Thực hiện giữ chỗ ghế (nếu chọn 1 ghế giữ trực tiếp, nếu chọn nhiều ghế giữ ghế đầu tiên)
+          const targetSeat = selectedSeats[0];
+
+          const holdRes = await fetchAPI('/tickets/hold', 'POST', {
+            tripId:        Number(tripId),
+            seatId:        Number(targetSeat.seatId),
+            customerName:  name,
+            customerPhone: phone,
+            customerEmail: email,
+            userId:        user?.userId || null,
+          });
+
+          // Giữ chỗ thành công -> chuyển sang payment.html
+          showSuccessModal(
+            'Giữ chỗ thành công!',
+            `Ghế ${holdRes.seatNumber || targetSeat.seatNumber} của bạn đã được khóa giữ trong 10 phút. Tiếp tục thanh toán mã vé ${holdRes.ticketCode}!`,
+            () => {
+              window.location.href = `payment.html?ticketId=${holdRes.ticketId}`;
+            }
+          );
+
+        } catch (err) {
+          // Xung đột 409 hoặc lỗi khác đã được fetchAPI kích hoạt modal SweetAlert2
+          await loadSeatsData(); // Tải lại sơ đồ ghế cập nhật ghế vừa bị mua
+        }
+      }, 'Đang giữ chỗ an toàn...');
+    }
+  </script>
+</body>
+</html>
