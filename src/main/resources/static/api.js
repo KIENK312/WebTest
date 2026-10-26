@@ -3,7 +3,9 @@
  * Tích hợp SweetAlert2, FontAwesome, Fetch API chuẩn RESTful kết nối http://localhost:8080/api/v1
  */
 
-const API_BASE = 'http://localhost:8080/api/v1';
+const API_BASE = (window.location.protocol.startsWith('http'))
+  ? `${window.location.origin}/api/v1`
+  : 'http://localhost:8080/api/v1';
 
 // ============================================================
 // 1. SWEETALERT2 & TOAST NOTIFICATION HELPERS

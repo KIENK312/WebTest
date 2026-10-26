@@ -16,13 +16,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                // 1. Cho phép các Origins từ Live Server (VS Code), Vite và React dev server
-                .allowedOrigins(
-                        "http://localhost:5500",
-                        "http://127.0.0.1:5500",
-                        "http://localhost:3000",
-                        "http://localhost:5173"
-                )
+                // 1. Cho phép mọi Origin (bao gồm Localhost, Cloudflare Tunnel, Vercel, Netlify)
+                .allowedOriginPatterns("*")
                 // 2. Cho phép đầy đủ các HTTP Method chuẩn RESTful
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 // 3. Cho phép các Headers cần thiết khi gửi kèm JWT hoặc JSON payload

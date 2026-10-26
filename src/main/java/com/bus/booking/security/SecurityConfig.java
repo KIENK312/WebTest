@@ -144,19 +144,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Cho phép các nguồn gốc (Origins) cụ thể từ Live Server, Vite, React Localhost
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5500",
-                "http://127.0.0.1:5500",
-                "http://localhost:3000",
-                "http://localhost:5173"
-        ));
-
-        // Hỗ trợ linh hoạt cho các cổng dev cục bộ khác nhau khi kiểm thử
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*"
-        ));
+        // 1. Cho phép tất cả Origins thông qua allowedOriginPatterns (hỗ trợ Cloudflare Tunnel, Vercel, Netlify, Localhost)
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
         // 2. Cho phép các HTTP Methods theo chuẩn RESTful
         configuration.setAllowedMethods(List.of(
