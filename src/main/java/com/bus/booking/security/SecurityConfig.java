@@ -57,8 +57,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Tắt CSRF vì sử dụng Stateless JWT Authentication
+                // 1. Tắt CSRF vì sử dụng Stateless JWT Authentication và cho phép H2 console frame
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
 
                 // 2. Cấu hình CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -94,10 +95,9 @@ public class SecurityConfig {
                         // -----------------------------------------------------------------------------------------
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh (Vanilla JS frontend)
-                        // Không yêu cầu xác thực với file tĩnh – JWT chỉ cần ở tầng API
+                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh (Vanilla JS frontend) và H2 console
                         .requestMatchers(
-                            "/", "/favicon.ico", "/error",
+                            "/", "/favicon.ico", "/error", "/h2-console/**",
                             "/*.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.svg",
                             "/index.html", "/login.html", "/my-tickets.html",
                             "/trips.html", "/seat-selection.html", "/payment.html",

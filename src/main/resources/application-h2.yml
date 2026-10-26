@@ -1,0 +1,37 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  config:
+    activate:
+      on-profile: h2
+
+  # Tắt tự động chạy schema.sql vì Hibernate ddl-auto: create-drop tự động sinh bảng chuẩn cho H2
+  sql:
+    init:
+      mode: never
+
+  # ---------------------------------------------------------------------------------------
+  # CẤU HÌNH H2 IN-MEMORY DATABASE (Chạy 100% trong RAM - Không cần cài SQL Server)
+  # ---------------------------------------------------------------------------------------
+  datasource:
+    url: jdbc:h2:mem:busbookingdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MSSQLServer
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        default_schema: PUBLIC

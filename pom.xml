@@ -66,6 +66,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 In-Memory Database (phục vụ Deploy Cloud / Render miễn phí 100%) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

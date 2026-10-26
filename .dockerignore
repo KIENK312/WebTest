@@ -1,0 +1,10 @@
+target/
+.git/
+.idea/
+*.iml
+*.log
+.mvn/
+mvnw*
+share.bat
+run-h2.bat
+run-sqlserver.bat

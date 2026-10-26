@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /
     encoding:
@@ -10,6 +10,10 @@ server:
 spring:
   application:
     name: bus-ticket-multi-partner-service
+
+  sql:
+    init:
+      mode: never
 
   # ---------------------------------------------------------------------------------------
   # CẤU HÌNH KẾT NỐI DATABASE (MS SQL SERVER & HIKARICP)
