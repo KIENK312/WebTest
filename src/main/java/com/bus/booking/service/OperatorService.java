@@ -42,8 +42,14 @@ public interface OperatorService {
     List<MaintenanceDto> getMaintenanceLogsByBus(Long busId);
 
     /**
-     * Xử lý giải quyết operatorId an toàn:
-     * Nếu operatorId null hoặc không tồn tại, lấy nhà xe đầu tiên hợp lệ từ DB.
+     * Lấy danh sách đối tác nhà xe phù hợp theo phân quyền của người đang đăng nhập:
+     * - Admin: Toàn bộ danh sách nhà xe hợp tác
+     * - Operator (Phương Trang, Hoàng Long...): Duy nhất nhà xe của họ
+     */
+    List<com.bus.booking.dto.response.PartnerDto> getPartnersForCurrentScope();
+
+    /**
+     * Xử lý giải quyết operatorId an toàn theo phân quyền người dùng.
      */
     Long resolveOperatorId(Long operatorId);
 }

@@ -51,11 +51,16 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
+        String role = userDetails.getRoleName();
+        if (role != null && !role.startsWith("ROLE_")) {
+            role = "ROLE_" + role;
+        }
+
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("userId", userDetails.getId())
                 .claim("email", userDetails.getEmail())
-                .claim("role", userDetails.getRoleName())
+                .claim("role", role)
                 .claim("operatorId", userDetails.getOperatorId())
                 .issuedAt(now)
                 .expiration(expiryDate)

@@ -17,8 +17,11 @@ public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final String email;
+    private final String phoneNumber;
     private final String fullName;
     private final Long operatorId;
+    private final String operatorName;
+    private final String operatorCode;
     private final String roleName;
     private final Collection<? extends GrantedAuthority> authorities;
     private final boolean active;
@@ -28,10 +31,17 @@ public class CustomUserDetails implements UserDetails {
         this.username = user.getUsername();
         this.password = user.getPassword();
         this.email = user.getEmail();
+        this.phoneNumber = user.getPhoneNumber();
         this.fullName = user.getFullName();
         this.operatorId = user.getOperator() != null ? user.getOperator().getId() : null;
-        this.roleName = user.getRole().getName();
-        this.authorities = Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getName()));
+        this.operatorName = user.getOperator() != null ? user.getOperator().getName() : null;
+        this.operatorCode = user.getOperator() != null ? user.getOperator().getCode() : null;
+        String rName = user.getRole().getName();
+        if (rName != null && !rName.startsWith("ROLE_")) {
+            rName = "ROLE_" + rName;
+        }
+        this.roleName = rName;
+        this.authorities = Collections.singletonList(new SimpleGrantedAuthority(rName));
         this.active = user.getStatus() == UserStatus.ACTIVE;
     }
 

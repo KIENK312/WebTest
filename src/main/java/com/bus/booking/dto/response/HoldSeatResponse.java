@@ -23,6 +23,15 @@ public class HoldSeatResponse {
     private String customerPhone;
     private String customerEmail;
 
+    // Thông tin tuyến xe, nhà xe và giờ xuất bến (UI/UX)
+    private String origin;
+    private String destination;
+    private LocalDateTime departureTime;
+    private LocalDateTime arrivalTime;
+    private String operatorName;
+    private String busPlateNumber;
+    private String busType;
+
     private BigDecimal price;
     private TicketStatus status;
     private Long version;

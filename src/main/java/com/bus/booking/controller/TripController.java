@@ -20,10 +20,10 @@ public class TripController {
     private final TripService tripService;
 
     /**
-     * Tìm kiếm chuyến xe công khai theo điểm đi, điểm đến và thời gian.
+     * Tìm kiếm và lấy danh sách chuyến xe công khai (hỗ trợ lấy tất cả chuyến đang mở bán).
      * Tự động loại bỏ các chuyến có xe đang dính bảo dưỡng.
      */
-    @GetMapping("/search")
+    @GetMapping({"", "/all", "/search"})
     public ResponseEntity<ApiResponse<List<TripSearchResponse>>> searchTrips(
             @Valid @ModelAttribute TripSearchRequest request) {
         List<TripSearchResponse> responses = tripService.searchTrips(request);

@@ -64,8 +64,12 @@ public class AuthServiceImpl implements AuthService {
                 .username(userDetails.getUsername())
                 .fullName(userDetails.getFullName())
                 .email(userDetails.getEmail())
+                .phone(userDetails.getPhoneNumber())
+                .phoneNumber(userDetails.getPhoneNumber())
                 .role(userDetails.getRoleName())
                 .operatorId(userDetails.getOperatorId())
+                .operatorName(userDetails.getOperatorName())
+                .operatorCode(userDetails.getOperatorCode())
                 .build();
     }
 
@@ -118,6 +122,8 @@ public class AuthServiceImpl implements AuthService {
                 .username(savedUser.getUsername())
                 .fullName(savedUser.getFullName())
                 .email(savedUser.getEmail())
+                .phone(savedUser.getPhoneNumber())
+                .phoneNumber(savedUser.getPhoneNumber())
                 .role(savedUser.getRole().getName())
                 .operatorId(operator != null ? operator.getId() : null)
                 .build();

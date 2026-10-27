@@ -4,8 +4,10 @@ import com.bus.booking.dto.request.CreateTripRequest;
 import com.bus.booking.dto.response.ApiResponse;
 import com.bus.booking.dto.response.BusDto;
 import com.bus.booking.dto.response.MaintenanceDto;
+import com.bus.booking.dto.response.PartnerDto;
 import com.bus.booking.dto.response.RouteDto;
 import com.bus.booking.dto.response.TripSearchResponse;
+import com.bus.booking.service.AdminService;
 import com.bus.booking.service.OperatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,17 @@ import java.util.List;
 public class OperatorController {
 
     private final OperatorService operatorService;
+    private final AdminService adminService;
+
+    /**
+     * Lấy danh sách nhà xe đối tác cho phân hệ Operator / Quản lý.
+     * Cho phép truy cập không dính 403 Forbidden.
+     */
+    @GetMapping("/partners")
+    public ResponseEntity<ApiResponse<List<PartnerDto>>> getPartners() {
+        List<PartnerDto> partners = operatorService.getPartnersForCurrentScope();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách nhà xe đối tác thành công", partners));
+    }
 
     /**
      * Lấy danh sách đội xe khách phẳng (BusDto) theo nhà xe hoặc toàn hệ thống.

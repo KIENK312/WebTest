@@ -68,8 +68,8 @@
                 class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
           <span class="text-base">🚌</span>
           <div>
-            <div class="text-orange-300 font-extrabold leading-tight">Nhà xe FUTA</div>
-            <div class="text-[10px] text-slate-300 font-normal">Điều hành xe</div>
+            <div class="text-orange-300 font-extrabold leading-tight">Phương Trang</div>
+            <div class="text-[10px] text-slate-300 font-normal">FUTA Bus Lines</div>
           </div>
         </button>
 
@@ -77,8 +77,8 @@
                 class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
           <span class="text-base">🚌</span>
           <div>
-            <div class="text-blue-300 font-extrabold leading-tight">Hoàng Long</div>
-            <div class="text-[10px] text-slate-300 font-normal">Nhà xe đối tác</div>
+            <div class="text-rose-300 font-extrabold leading-tight">Hoàng Long</div>
+            <div class="text-[10px] text-slate-300 font-normal">Hoàng Long Bus</div>
           </div>
         </button>
 
@@ -86,8 +86,8 @@
                 class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
           <span class="text-base">👤</span>
           <div>
-            <div class="text-emerald-300 font-extrabold leading-tight">Khách Hàng</div>
-            <div class="text-[10px] text-slate-300 font-normal">Đặt vé xe</div>
+            <div class="text-sky-300 font-extrabold leading-tight">Nguyễn Trung Kiên</div>
+            <div class="text-[10px] text-slate-300 font-normal">Khách Hàng (Customer)</div>
           </div>
         </button>
       </div>
@@ -260,13 +260,15 @@
         const token = result.accessToken || result.token;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify({
-          userId:     result.userId,
-          username:   result.username,
-          fullName:   result.fullName,
-          email:      result.email,
-          phone:      result.phone || result.phoneNumber || '',
-          role:       result.role,
-          operatorId: result.operatorId,
+          userId:       result.userId,
+          username:     result.username,
+          fullName:     result.fullName,
+          email:        result.email,
+          phone:        result.phone || result.phoneNumber || '',
+          role:         result.role,
+          operatorId:   result.operatorId,
+          operatorName: result.operatorName,
+          operatorCode: result.operatorCode,
         }));
 
         showSuccessModal(
@@ -288,33 +290,77 @@
       }
     }
 
-    // Đăng ký
+    // Đăng ký tài khoản mới với đầy đủ kiểm tra tính hợp lệ (Validation)
     async function handleRegister(event) {
       event.preventDefault();
-      const fullName = document.getElementById('reg-fullname').value.trim();
-      const email    = document.getElementById('reg-email').value.trim();
-      const phone    = document.getElementById('reg-phone').value.trim();
-      const username = document.getElementById('reg-username').value.trim();
-      const password = document.getElementById('reg-password').value;
+      const fullName = document.getElementById('reg-fullname')?.value.trim() || '';
+      const email    = document.getElementById('reg-email')?.value.trim() || '';
+      const phone    = document.getElementById('reg-phone')?.value.trim() || '';
+      const username = document.getElementById('reg-username')?.value.trim() || '';
+      const password = document.getElementById('reg-password')?.value || '';
+      const btn      = document.getElementById('btn-register');
 
-      try {
-        await fetchAPI('/auth/register', 'POST', {
-          fullName, email, phone, username, password
-        });
-
-        showSuccessModal(
-          'Đăng ký thành công!',
-          'Tài khoản của bạn đã được tạo. Vui lòng đăng nhập để bắt đầu trải nghiệm!',
-          () => {
-            document.getElementById('login-username').value = username;
-            document.getElementById('login-password').value = password;
-            switchTab('login');
-          }
-        );
-
-      } catch (err) {
-        // Modal lỗi đã hiển thị
+      // Validation Client-side chặt chẽ
+      if (!fullName) {
+        showToast('Vui lòng nhập họ và tên của bạn!', 'warning');
+        document.getElementById('reg-fullname')?.focus();
+        return;
       }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Vui lòng nhập địa chỉ email hợp lệ (vd: ban@gmail.com)!', 'warning');
+        document.getElementById('reg-email')?.focus();
+        return;
+      }
+      if (!phone) {
+        showToast('Số điện thoại không được để trống!', 'warning');
+        document.getElementById('reg-phone')?.focus();
+        return;
+      }
+      // Định dạng số điện thoại Việt Nam chuẩn (10 chữ số)
+      if (!/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone)) {
+        showToast('Số điện thoại không đúng định dạng (10 số, bắt đầu bằng 03, 05, 07, 08, 09)!', 'warning');
+        document.getElementById('reg-phone')?.focus();
+        return;
+      }
+      if (!username || username.length < 4) {
+        showToast('Tên đăng nhập phải có ít nhất 4 ký tự!', 'warning');
+        document.getElementById('reg-username')?.focus();
+        return;
+      }
+      if (!password || password.length < 6) {
+        showToast('Mật khẩu phải có ít nhất 6 ký tự!', 'warning');
+        document.getElementById('reg-password')?.focus();
+        return;
+      }
+
+      await withButtonLoading(btn, async () => {
+        try {
+          // Gửi đồng thời cả 'phone' và 'phoneNumber' để đảm bảo tương thích 100% với Backend
+          await fetchAPI('/auth/register', 'POST', {
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            phoneNumber: phone,
+            username: username,
+            password: password,
+            roleName: 'ROLE_CUSTOMER'
+          });
+
+          showSuccessModal(
+            'Đăng ký tài khoản thành công! 🎉',
+            `Chào mừng ${fullName}! Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập ngay để bắt đầu đặt vé xe!`,
+            () => {
+              document.getElementById('login-username').value = username;
+              document.getElementById('login-password').value = password;
+              switchTab('login');
+              showToast('Đã điền sẵn tài khoản của bạn vào form đăng nhập!', 'success', 2500);
+            }
+          );
+
+        } catch (err) {
+          // Lỗi đã được hiển thị qua modal sang trọng của fetchAPI
+        }
+      }, 'Đang đăng ký...');
     }
   </script>
 </body>

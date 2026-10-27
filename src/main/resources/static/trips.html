@@ -173,6 +173,61 @@
       <!-- RIGHT COLUMN: DANH SÁCH CHUYẾN XE (Cards) -->
       <section class="lg:col-span-8 xl:col-span-9 space-y-4">
         
+        <!-- HÃNG XE ĐỐI TÁC HÀNG ĐẦU: PHƯƠNG TRANG & HOÀNG LONG (TABS CHỌN NHANH) -->
+        <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-200/80 shadow-xs mb-2">
+          <div class="flex items-center justify-between mb-2.5 px-1">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+              <i class="fa-solid fa-building-flag text-blue-600"></i>
+              <span>Chọn theo Hãng xe đối tác</span>
+            </span>
+            <span class="text-[11px] font-semibold text-slate-400">Đồng bộ lịch xuất bến thực tế</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" id="operator-brand-tabs">
+            <!-- All Operators Tab -->
+            <button onclick="selectOperatorTab('ALL')" id="tab-op-ALL"
+              class="op-tab-btn flex items-center gap-3 p-3 rounded-2xl border-2 border-blue-600 bg-blue-50/70 transition-all duration-200 text-left shadow-xs">
+              <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-xs">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-black text-slate-900 truncate">Tất cả hãng xe</div>
+                <div class="text-[11px] font-semibold text-slate-500" id="count-op-ALL">Đang tải...</div>
+              </div>
+            </button>
+
+            <!-- Phuong Trang (FUTA) Tab -->
+            <button onclick="selectOperatorTab('FUTA')" id="tab-op-FUTA"
+              class="op-tab-btn flex items-center gap-3 p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-orange-300 hover:bg-orange-50/30 transition-all duration-200 text-left shadow-2xs">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 text-white flex items-center justify-center text-xs font-black shadow-xs tracking-wider">
+                FUTA
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-black text-orange-600 truncate flex items-center gap-1.5">
+                  Phương Trang
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-100 text-orange-700">FUTA</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-500" id="count-op-FUTA">Chất lượng cao</div>
+              </div>
+            </button>
+
+            <!-- Hoang Long Tab -->
+            <button onclick="selectOperatorTab('HOANGLONG')" id="tab-op-HOANGLONG"
+              class="op-tab-btn flex items-center gap-3 p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/30 transition-all duration-200 text-left shadow-2xs">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-red-700 text-white flex items-center justify-center text-xs font-black shadow-xs tracking-wider">
+                HL
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-black text-rose-600 truncate flex items-center gap-1.5">
+                  Hoàng Long
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-700">VIP</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-500" id="count-op-HOANGLONG">Xe chất lượng cao</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- Header thông tin số lượng -->
         <div class="flex items-center justify-between mb-2">
           <p id="trips-count-label" class="text-sm font-bold text-slate-700">Đang tìm chuyến xe phù hợp...</p>
@@ -206,6 +261,20 @@
     let currentOrigin = '';
     let currentDest = '';
     let currentDate = '';
+    let currentOpTab = 'ALL';
+
+    // Helper kiểm tra hãng xe
+    function isFutaTrip(t) {
+      const code = (t.operatorCode || '').toUpperCase();
+      const name = (t.operatorName || '').toLowerCase();
+      return code.includes('FUTA') || name.includes('phương trang');
+    }
+
+    function isHoangLongTrip(t) {
+      const code = (t.operatorCode || '').toUpperCase();
+      const name = (t.operatorName || '').toLowerCase();
+      return code.includes('HOANGLONG') || code.includes('HL') || name.includes('hoàng long');
+    }
 
     // Khởi tạo trang
     (async function init() {
@@ -213,14 +282,19 @@
 
       // Lấy tham số từ URL
       const urlParams = new URLSearchParams(window.location.search);
-      currentOrigin = urlParams.get('departurePoint') || 'Hà Nội';
-      currentDest   = urlParams.get('arrivalPoint')   || 'Đà Nẵng';
-      
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const pad = n => String(n).padStart(2, '0');
-      const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
-      currentDate   = urlParams.get('departureDate')  || tomorrowStr;
+      const paramOrigin = urlParams.get('departurePoint');
+      const paramDest   = urlParams.get('arrivalPoint');
+      const paramDate   = urlParams.get('departureDate');
+
+      if (paramOrigin && paramOrigin.trim() !== '') {
+        currentOrigin = paramOrigin.trim();
+        currentDest   = (paramDest || '').trim();
+        currentDate   = paramDate || '';
+      } else {
+        currentOrigin = '';
+        currentDest   = '';
+        currentDate   = '';
+      }
 
       // Update UI Header
       updateHeaderSummary();
@@ -230,9 +304,9 @@
     })();
 
     function updateHeaderSummary() {
-      document.getElementById('summary-origin').textContent = currentOrigin;
-      document.getElementById('summary-destination').textContent = currentDest;
-      document.getElementById('summary-date').textContent = formatDate(currentDate);
+      document.getElementById('summary-origin').textContent = currentOrigin || 'Tất cả tuyến đường';
+      document.getElementById('summary-destination').textContent = currentDest || 'Toàn quốc';
+      document.getElementById('summary-date').textContent = currentDate ? formatDate(currentDate) : 'Tất cả các ngày mở bán';
 
       document.getElementById('mod-origin').value = currentOrigin;
       document.getElementById('mod-dest').value   = currentDest;
@@ -250,33 +324,77 @@
       currentDest   = document.getElementById('mod-dest').value.trim();
       currentDate   = document.getElementById('mod-date').value;
 
-      const params = new URLSearchParams({
-        departurePoint: currentOrigin,
-        arrivalPoint: currentDest,
-        departureDate: currentDate
-      });
-      window.history.pushState({}, '', `trips.html?${params.toString()}`);
+      const params = new URLSearchParams();
+      if (currentOrigin) params.set('departurePoint', currentOrigin);
+      if (currentDest) params.set('arrivalPoint', currentDest);
+      if (currentDate) params.set('departureDate', currentDate);
+
+      window.history.pushState({}, '', `trips.html${params.toString() ? '?' + params.toString() : ''}`);
       updateHeaderSummary();
       toggleSearchModifier();
       loadTrips();
     }
 
     function changeDateOffset(offset) {
-      const current = new Date(currentDate);
+      let baseDate = currentDate ? new Date(currentDate) : new Date();
       if (offset !== 0) {
-        current.setDate(current.getDate() + offset);
+        baseDate.setDate(baseDate.getDate() + offset);
       }
       const pad = n => String(n).padStart(2, '0');
-      currentDate = `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())}`;
+      currentDate = `${baseDate.getFullYear()}-${pad(baseDate.getMonth() + 1)}-${pad(baseDate.getDate())}`;
       
-      const params = new URLSearchParams({
-        departurePoint: currentOrigin,
-        arrivalPoint: currentDest,
-        departureDate: currentDate
-      });
+      const params = new URLSearchParams();
+      if (currentOrigin) params.set('departurePoint', currentOrigin);
+      if (currentDest) params.set('arrivalPoint', currentDest);
+      params.set('departureDate', currentDate);
+
       window.history.pushState({}, '', `trips.html?${params.toString()}`);
       updateHeaderSummary();
       loadTrips();
+    }
+
+    // Cập nhật số lượng chuyến theo từng tab hãng xe
+    function updateOperatorBrandCounters() {
+      const total = allTrips.length;
+      const futaCount = allTrips.filter(t => isFutaTrip(t)).length;
+      const hlCount   = allTrips.filter(t => isHoangLongTrip(t)).length;
+
+      const cAll  = document.getElementById('count-op-ALL');
+      const cFuta = document.getElementById('count-op-FUTA');
+      const cHl   = document.getElementById('count-op-HOANGLONG');
+
+      if (cAll)  cAll.textContent  = `${total} chuyến khả dụng`;
+      if (cFuta) cFuta.textContent = `${futaCount} chuyến mở bán`;
+      if (cHl)   cHl.textContent   = `${hlCount} chuyến mở bán`;
+    }
+
+    // Chọn Tab hãng xe
+    function selectOperatorTab(tab) {
+      currentOpTab = tab;
+
+      // Reset style các button tab
+      document.querySelectorAll('.op-tab-btn').forEach(btn => {
+        btn.classList.remove(
+          'border-blue-600', 'bg-blue-50/70',
+          'border-orange-500', 'bg-orange-50/70',
+          'border-rose-600', 'bg-rose-50/70'
+        );
+        btn.classList.add('border-slate-200', 'bg-white');
+      });
+
+      const activeBtn = document.getElementById(`tab-op-${tab}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-slate-200', 'bg-white');
+        if (tab === 'ALL') {
+          activeBtn.classList.add('border-blue-600', 'bg-blue-50/70');
+        } else if (tab === 'FUTA') {
+          activeBtn.classList.add('border-orange-500', 'bg-orange-50/70');
+        } else if (tab === 'HOANGLONG') {
+          activeBtn.classList.add('border-rose-600', 'bg-rose-50/70');
+        }
+      }
+
+      filterAndRenderTrips();
     }
 
     // Gọi API tìm chuyến xe
@@ -285,19 +403,21 @@
       const container = document.getElementById('trips-container');
       container.innerHTML = `
         <div class="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-xs">
-          <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p class="font-bold text-slate-700 text-sm">Đang tìm các chuyến xe tốt nhất...</p>
+          <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="font-bold text-slate-700 text-sm">Đang tải toàn bộ chuyến xe mở bán...</p>
         </div>
       `;
 
       try {
-        const data = await fetchAPI('/trips/search', 'GET', null, {
-          departurePoint: currentOrigin,
-          arrivalPoint: currentDest,
-          departureDate: currentDate
-        });
+        const queryParams = {};
+        if (currentOrigin) queryParams.departurePoint = currentOrigin;
+        if (currentDest) queryParams.arrivalPoint = currentDest;
+        if (currentDate) queryParams.departureDate = currentDate;
+
+        const data = await fetchAPI('/trips/search', 'GET', null, queryParams);
 
         allTrips = Array.isArray(data) ? data : [];
+        updateOperatorBrandCounters();
         populateOperatorFilters();
         filterAndRenderTrips();
 
@@ -309,7 +429,7 @@
             </div>
             <h3 class="text-base font-extrabold text-slate-800 mb-1">Không thể tải chuyến xe</h3>
             <p class="text-xs text-slate-500 mb-5">Đã xảy ra lỗi kết nối tới máy chủ. Vui lòng kiểm tra lại!</p>
-            <button onclick="loadTrips()" class="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition">
+            <button onclick="loadTrips()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition">
               <i class="fa-solid fa-rotate-right mr-1.5"></i> Thử lại
             </button>
           </div>
@@ -326,7 +446,7 @@
       }
       list.innerHTML = operators.map(op => `
         <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
-          <input type="checkbox" name="op-filter" value="${op}" onchange="filterAndRenderTrips()" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
+          <input type="checkbox" name="op-filter" value="${op}" onchange="filterAndRenderTrips()" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4" />
           <span class="truncate">${op}</span>
         </label>
       `).join('');
@@ -340,7 +460,14 @@
 
       let filtered = [...allTrips];
 
-      // Lọc khung giờ
+      // 1. Lọc theo Top Brand Tabs (FUTA, HOANGLONG, ALL)
+      if (currentOpTab === 'FUTA') {
+        filtered = filtered.filter(t => isFutaTrip(t));
+      } else if (currentOpTab === 'HOANGLONG') {
+        filtered = filtered.filter(t => isHoangLongTrip(t));
+      }
+
+      // 2. Lọc khung giờ
       if (checkedTimes.length > 0) {
         filtered = filtered.filter(t => {
           const hour = new Date(t.departureTime).getHours();
@@ -351,12 +478,12 @@
         });
       }
 
-      // Lọc nhà xe
+      // 3. Lọc nhà xe từ checkbox sidebar
       if (checkedOps.length > 0) {
         filtered = filtered.filter(t => checkedOps.includes(t.operatorName));
       }
 
-      // Lọc loại xe
+      // 4. Lọc loại xe
       if (checkedTypes.length > 0) {
         filtered = filtered.filter(t => {
           const type = t.busType || '';
@@ -364,7 +491,7 @@
         });
       }
 
-      // Sắp xếp
+      // 5. Sắp xếp
       if (sort === 'time-asc') {
         filtered.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
       } else if (sort === 'time-desc') {
@@ -381,7 +508,19 @@
     function resetFilters() {
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       document.getElementById('filter-sort').value = 'time-asc';
-      filterAndRenderTrips();
+      selectOperatorTab('ALL');
+    }
+
+    // Tiện ích tính thời gian di chuyển (giờ + phút)
+    function calcDuration(dep, arr) {
+      if (!dep || !arr) return 'Tuyến thẳng';
+      const diffMs = new Date(arr) - new Date(dep);
+      if (diffMs <= 0) return 'Tuyến thẳng';
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      if (hours > 0 && minutes > 0) return `${hours} giờ ${minutes} phút`;
+      if (hours > 0) return `${hours} giờ`;
+      return `${minutes} phút`;
     }
 
     function renderTripCards(trips) {
@@ -392,16 +531,16 @@
       if (trips.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs">
-            <div class="w-16 h-16 rounded-3xl bg-orange-50 text-orange-500 flex items-center justify-center text-3xl mx-auto mb-4">
+            <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-3xl mx-auto mb-4">
               <i class="fa-solid fa-bus-simple"></i>
             </div>
-            <h3 class="text-base font-extrabold text-slate-800 mb-1">Không có chuyến xe nào</h3>
-            <p class="text-xs text-slate-500 mb-5">Rất tiếc, không tìm thấy chuyến phù hợp cho ngày này hoặc bộ lọc đã chọn.</p>
+            <h3 class="text-base font-extrabold text-slate-800 mb-1">Không có chuyến xe nào khớp bộ lọc</h3>
+            <p class="text-xs text-slate-500 mb-5">Vui lòng chọn ngày khác hoặc chuyển sang hãng xe đối tác khác.</p>
             <div class="flex justify-center gap-3">
-              <button onclick="changeDateOffset(1)" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition">
-                Xem ngày tiếp theo
+              <button onclick="selectOperatorTab('ALL')" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Xem tất cả chuyến xe
               </button>
-              <button onclick="resetFilters()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition">
+              <button onclick="resetFilters()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition">
                 Xóa bộ lọc
               </button>
             </div>
@@ -411,98 +550,176 @@
       }
 
       container.innerHTML = trips.map(trip => {
-        const depTime = formatTime(trip.departureTime);
-        const arrTime = formatTime(trip.arrivalTime);
-        const depDate = formatDate(trip.departureTime);
-        const opName  = trip.operatorName || 'Nhà xe Đối tác';
-        const opCode  = trip.operatorCode || 'FUTA';
-        const price   = formatVND(trip.basePrice);
-        const busType = trip.busType || 'Giường nằm 36 chỗ';
-        const plate   = trip.busPlateNumber || '—';
+        const depTime  = formatTime(trip.departureTime);
+        const arrTime  = formatTime(trip.arrivalTime);
+        const depDate  = formatDate(trip.departureTime);
+        const arrDate  = formatDate(trip.arrivalTime);
+        const duration = calcDuration(trip.departureTime, trip.arrivalTime);
+        const opName   = trip.operatorName || 'Nhà xe Đối tác';
+        const opCode   = (trip.operatorCode || 'BUS').toUpperCase();
+        const price    = formatVND(trip.basePrice);
+        const busType  = trip.busType || 'Giường nằm 36 chỗ';
+        const plate    = trip.busPlateNumber || '—';
         const availSeats = trip.availableSeats !== undefined ? trip.availableSeats : 36;
         const totalSeats = trip.totalSeats || 36;
+        const isLimo   = busType.toLowerCase().includes('limousine');
+
+        // Nhận diện thương hiệu Phương Trang (FUTA) và Hoàng Long
+        const isFuta = isFutaTrip(trip);
+        const isHL   = isHoangLongTrip(trip);
+
+        let brandLogoHtml = '';
+        let brandBadgeHtml = '';
+        let cardBorderClasses = 'border-slate-200/90 hover:border-blue-400 hover:shadow-blue-500/10';
+        let actionBtnClasses = 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 shadow-blue-500/25';
+        let brandTitleHtml = `<h4 class="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">${opName}</h4>`;
+
+        if (isFuta) {
+          brandLogoHtml = `
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 text-white flex flex-col items-center justify-center font-black shadow-md shadow-orange-500/25">
+              <span class="text-xs tracking-wider">FUTA</span>
+              <span class="text-[8px] font-bold opacity-90 uppercase">Bus Lines</span>
+            </div>
+          `;
+          brandBadgeHtml = `
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-orange-50 text-orange-700 border border-orange-200 flex items-center gap-1 shadow-2xs">
+              <i class="fa-solid fa-certificate text-orange-500"></i> Phương Trang (FUTA)
+            </span>
+          `;
+          cardBorderClasses = 'border-orange-200/90 hover:border-orange-500 hover:shadow-orange-500/15';
+          actionBtnClasses = 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-orange-500/25';
+          brandTitleHtml = `<h4 class="font-black text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition-colors">Phương Trang <span class="text-xs font-bold text-orange-600">(FUTA Bus Lines)</span></h4>`;
+        } else if (isHL) {
+          brandLogoHtml = `
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-700 text-white flex flex-col items-center justify-center font-black shadow-md shadow-rose-500/25">
+              <span class="text-xs tracking-wider">HL</span>
+              <span class="text-[8px] font-bold opacity-90 uppercase">Hoàng Long</span>
+            </div>
+          `;
+          brandBadgeHtml = `
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-2xs">
+              <i class="fa-solid fa-star text-rose-500"></i> Xe khách Hoàng Long
+            </span>
+          `;
+          cardBorderClasses = 'border-rose-200/90 hover:border-rose-500 hover:shadow-rose-500/15';
+          actionBtnClasses = 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 shadow-rose-500/25';
+          brandTitleHtml = `<h4 class="font-black text-slate-900 text-sm sm:text-base group-hover:text-rose-600 transition-colors">Hoàng Long <span class="text-xs font-bold text-rose-600">(Hoàng Long Bus Lines)</span></h4>`;
+        } else {
+          brandLogoHtml = `
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-500/20">
+              ${opCode}
+            </div>
+          `;
+          brandBadgeHtml = `
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+              ${opName}
+            </span>
+          `;
+        }
 
         return `
-          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-orange-200 transition-all duration-300 group">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div class="bg-white rounded-3xl p-5 sm:p-6 border ${cardBorderClasses} shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               
-              <!-- Left side: Operator info & Timeline -->
+              <!-- Left side: Operator info & Prominent Timeline -->
               <div class="flex-1 space-y-4">
                 
                 <!-- Operator Banner -->
-                <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      ${opCode}
-                    </div>
+                    ${brandLogoHtml}
                     <div>
-                      <h4 class="font-extrabold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">${opName}</h4>
-                      <p class="text-[11px] text-slate-400 font-medium">Xe: <span class="text-slate-600 font-semibold">${plate}</span> • ${busType}</p>
+                      ${brandTitleHtml}
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs font-bold text-slate-600">Biển số: <span class="font-mono text-slate-800">${plate}</span></span>
+                        <span class="text-slate-300">•</span>
+                        ${isLimo 
+                          ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200"><i class="fa-solid fa-crown text-[9px] mr-1"></i>${busType}</span>` 
+                          : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">${busType}</span>`}
+                      </div>
                     </div>
                   </div>
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                    <i class="fa-solid fa-chair text-[10px]"></i>
-                    Còn <strong>${availSeats}</strong>/${totalSeats} chỗ
-                  </span>
+
+                  <div class="flex items-center gap-2">
+                    ${brandBadgeHtml}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-blue-50 text-blue-700 border border-blue-200">
+                      <i class="fa-solid fa-chair text-[11px]"></i>
+                      Còn <strong>${availSeats}</strong>/${totalSeats} chỗ
+                    </span>
+                  </div>
                 </div>
 
-                <!-- Timeline Departure -> Arrival -->
-                <div class="grid grid-cols-12 items-center gap-2 pt-2">
-                  <!-- Departure -->
+                <!-- Timeline Departure -> Arrival (HIỂN THỊ RÕ RÀNG GIỜ XUẤT BẾN) -->
+                <div class="grid grid-cols-12 items-center gap-2 pt-1 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+                  
+                  <!-- Departure Block -->
                   <div class="col-span-4 sm:col-span-3">
-                    <div class="text-xl sm:text-2xl font-black text-slate-900">${depTime}</div>
-                    <div class="text-xs font-bold text-slate-700 truncate">${trip.origin}</div>
-                    <div class="text-[10px] text-slate-400">${depDate}</div>
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${isFuta ? 'bg-orange-100 text-orange-800' : isHL ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'} text-[10px] font-black uppercase tracking-wider mb-1">
+                      <i class="fa-solid fa-clock text-[9px]"></i> Giờ xuất bến
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black ${isFuta ? 'text-orange-600' : isHL ? 'text-rose-600' : 'text-blue-700'} tracking-tight leading-none mb-1">${depTime}</div>
+                    <div class="text-xs font-bold text-slate-800 truncate">${trip.origin}</div>
+                    <div class="text-[11px] font-semibold text-slate-400">${depDate}</div>
                   </div>
 
-                  <!-- Visual Connecting Bar -->
+                  <!-- Visual Connecting Bar & Duration -->
                   <div class="col-span-4 sm:col-span-6 flex flex-col items-center px-2">
-                    <span class="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
-                      <i class="fa-solid fa-clock text-[9px]"></i> Tuyến thẳng
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-extrabold text-[11px] mb-1.5 shadow-2xs">
+                      <i class="fa-solid fa-hourglass-half text-blue-600 text-[9px]"></i> ${duration}
                     </span>
                     <div class="w-full flex items-center gap-1">
                       <div class="w-2.5 h-2.5 rounded-full border-2 border-blue-600 bg-white"></div>
-                      <div class="flex-1 h-0.5 bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500"></div>
+                      <div class="flex-1 h-0.5 bg-gradient-to-r from-blue-600 via-sky-400 to-indigo-600"></div>
                       <i class="fa-solid fa-bus text-xs text-blue-600 mx-0.5"></i>
-                      <div class="flex-1 h-0.5 bg-gradient-to-r from-indigo-500 to-blue-500"></div>
+                      <div class="flex-1 h-0.5 bg-gradient-to-r from-indigo-600 to-blue-600"></div>
                       <div class="w-2.5 h-2.5 rounded-full border-2 border-indigo-600 bg-white"></div>
                     </div>
+                    <span class="text-[10px] font-semibold text-slate-400 mt-1">Chạy thẳng cao tốc</span>
                   </div>
 
-                  <!-- Arrival -->
+                  <!-- Arrival Block -->
                   <div class="col-span-4 sm:col-span-3 text-right">
-                    <div class="text-xl sm:text-2xl font-black text-slate-900">${arrTime}</div>
-                    <div class="text-xs font-bold text-slate-700 truncate">${trip.destination}</div>
-                    <div class="text-[10px] text-slate-400">Dự kiến</div>
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider mb-1">
+                      <i class="fa-solid fa-flag-checkered text-[9px]"></i> Dự kiến đến
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">${arrTime}</div>
+                    <div class="text-xs font-bold text-slate-800 truncate">${trip.destination}</div>
+                    <div class="text-[11px] font-semibold text-slate-400">${arrDate}</div>
                   </div>
+
                 </div>
 
                 <!-- Amenities tags -->
-                <div class="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-500">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
-                    <i class="fa-solid fa-wifi text-slate-400 text-[10px]"></i> Wifi tốc độ cao
+                <div class="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-500 font-medium">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/70">
+                    <i class="fa-solid fa-wifi text-blue-500 text-[10px]"></i> Wifi tốc độ cao
                   </span>
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
-                    <i class="fa-solid fa-bottle-water text-slate-400 text-[10px]"></i> Nước suối & khăn
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/70">
+                    <i class="fa-solid fa-bottle-water text-sky-500 text-[10px]"></i> Nước suối & khăn lạnh
                   </span>
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100">
-                    <i class="fa-solid fa-charging-station text-slate-400 text-[10px]"></i> Cổng sạc điện thoại
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/70">
+                    <i class="fa-solid fa-charging-station text-amber-500 text-[10px]"></i> Cổng sạc Type-C/USB
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/70">
+                    <i class="fa-solid fa-shield-halved text-emerald-500 text-[10px]"></i> Bảo hiểm 100%
                   </span>
                 </div>
 
               </div>
 
-              <!-- Right side: Price & Action -->
-              <div class="lg:w-48 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-row lg:flex-col items-center lg:items-end justify-between pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+              <!-- Right side: Price & Action Button -->
+              <div class="lg:w-52 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-row lg:flex-col items-center lg:items-end justify-between pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div class="text-left lg:text-right">
-                  <span class="text-[11px] text-slate-400 font-semibold block">Giá vé từ</span>
-                  <div class="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">${price}</div>
-                  <span class="text-[10px] text-blue-600 font-bold hidden lg:block">✓ Không phụ phí ẩn</span>
+                  <span class="text-[11px] text-slate-400 font-bold block">Giá vé chính thức</span>
+                  <div class="text-2xl sm:text-3xl font-black ${isFuta ? 'text-orange-600' : isHL ? 'text-rose-600' : 'text-blue-600'} tracking-tight">${price}</div>
+                  <span class="text-[10px] text-emerald-600 font-bold hidden lg:inline-flex items-center gap-1 mt-0.5">
+                    <i class="fa-solid fa-check text-[9px]"></i> Đã gồm thuế & phí
+                  </span>
                 </div>
 
                 <a href="seat-selection.html?tripId=${trip.tripId}"
                    onclick="return handleSelectTrip(event, this, ${trip.tripId})"
-                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-sm shadow-md shadow-blue-500/25 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300">
+                   class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl ${actionBtnClasses} text-white font-black text-sm shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300">
                   <span>Chọn ghế</span>
                   <i class="fa-solid fa-arrow-right text-xs"></i>
                 </a>

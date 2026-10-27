@@ -132,4 +132,16 @@ public interface TicketRepository extends JpaRepository<TicketEntity, Long> {
            "WHERE t.user.id = :userId " +
            "ORDER BY t.bookingTime DESC")
     List<TicketEntity> findByUserIdWithDetails(@Param("userId") Long userId);
+
+    /**
+     * Tra cứu lịch sử vé xe theo số điện thoại hành khách (kèm JOIN FETCH đầy đủ quan hệ).
+     */
+    @Query("SELECT t FROM TicketEntity t " +
+           "JOIN FETCH t.trip tr " +
+           "JOIN FETCH tr.route r " +
+           "JOIN FETCH tr.bus b " +
+           "JOIN FETCH t.seat s " +
+           "WHERE t.customerPhone = :phone " +
+           "ORDER BY t.bookingTime DESC")
+    List<TicketEntity> findByCustomerPhoneWithDetails(@Param("phone") String phone);
 }

@@ -118,6 +118,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/payments/**").hasAnyRole("CUSTOMER", "OPERATOR", "ADMIN")
 
                         // Role OPERATOR
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin/partners").hasAnyRole("OPERATOR", "ADMIN")
                         .requestMatchers("/api/v1/operator/**").hasAnyRole("OPERATOR", "ADMIN")
 
                         // Role ADMIN

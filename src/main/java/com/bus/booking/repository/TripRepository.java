@@ -16,17 +16,21 @@ public interface TripRepository extends JpaRepository<TripEntity, Long> {
 
     /**
      * Tìm kiếm chuyến xe theo điểm xuất phát, điểm đến, khoảng thời gian khởi hành,
-     * đồng thời chỉ lấy các chuyến có phương tiện xe đang hoạt động (bus.status = 'ACTIVE').
+     * đồng thời chỉ lấy các chuyến có phương tiện xe đang hoạt động (bus.status = 'ACTIVE')
+     * và trạng thái chuyến chưa bị huỷ (status <> CANCELLED).
+     * Hỗ trợ tham số null / rỗng để lấy toàn bộ chuyến mở bán.
      */
     @Query("SELECT t FROM TripEntity t " +
            "JOIN FETCH t.route r " +
            "JOIN FETCH r.operator ro " +
            "JOIN FETCH t.bus b " +
            "JOIN FETCH b.operator o " +
-           "WHERE LOWER(r.origin) LIKE LOWER(CONCAT('%', :departurePoint, '%')) " +
-           "  AND LOWER(r.destination) LIKE LOWER(CONCAT('%', :arrivalPoint, '%')) " +
-           "  AND t.departureTime BETWEEN :startTime AND :endTime " +
+           "WHERE (:departurePoint IS NULL OR :departurePoint = '' OR LOWER(r.origin) LIKE LOWER(CONCAT('%', :departurePoint, '%'))) " +
+           "  AND (:arrivalPoint IS NULL OR :arrivalPoint = '' OR LOWER(r.destination) LIKE LOWER(CONCAT('%', :arrivalPoint, '%'))) " +
+           "  AND (:startTime IS NULL OR t.departureTime >= :startTime) " +
+           "  AND (:endTime IS NULL OR t.departureTime <= :endTime) " +
            "  AND b.status = com.bus.booking.enums.BusStatus.ACTIVE " +
+           "  AND t.status <> com.bus.booking.enums.TripStatus.CANCELLED " +
            "ORDER BY t.departureTime ASC")
     List<TripEntity> findAvailableTrips(
             @Param("departurePoint") String departurePoint,
@@ -34,6 +38,19 @@ public interface TripRepository extends JpaRepository<TripEntity, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+    /**
+     * Lấy toàn bộ chuyến xe hợp lệ đang mở bán trong hệ thống.
+     */
+    @Query("SELECT t FROM TripEntity t " +
+           "JOIN FETCH t.route r " +
+           "JOIN FETCH r.operator ro " +
+           "JOIN FETCH t.bus b " +
+           "JOIN FETCH b.operator o " +
+           "WHERE b.status = com.bus.booking.enums.BusStatus.ACTIVE " +
+           "  AND t.status <> com.bus.booking.enums.TripStatus.CANCELLED " +
+           "ORDER BY t.departureTime ASC")
+    List<TripEntity> findAllAvailableTrips();
 
     List<TripEntity> findByRouteId(Long routeId);
 

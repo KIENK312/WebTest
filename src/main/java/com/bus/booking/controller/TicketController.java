@@ -3,11 +3,13 @@ package com.bus.booking.controller;
 import com.bus.booking.dto.request.HoldSeatRequest;
 import com.bus.booking.dto.response.ApiResponse;
 import com.bus.booking.dto.response.HoldSeatResponse;
+import com.bus.booking.security.CustomUserDetails;
 import com.bus.booking.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,13 +52,30 @@ public class TicketController {
     }
 
     /**
-     * Lấy danh sách lịch sử vé đã đặt của người dùng.
+     * BẢO MẬT: Lấy danh sách lịch sử vé của người dùng đang đăng nhập qua JWT Token.
+     * Trích xuất userId trực tiếp từ SecurityContextHolder (CustomUserDetails), tuyệt đối không dùng findAll().
+     * Nếu là khách vãng lai chưa đăng nhập, cho phép tra cứu an toàn theo số điện thoại (phone).
+     */
+    @GetMapping("/my-tickets")
+    public ResponseEntity<ApiResponse<java.util.List<HoldSeatResponse>>> getMyTickets(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(value = "phone", required = false) String phone) {
+        Long userId = (userDetails != null) ? userDetails.getId() : null;
+        java.util.List<HoldSeatResponse> list = bookingService.getUserTickets(userId, phone);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vé thành công", list));
+    }
+
+    /**
+     * Endpoint tương thích: Lấy danh sách lịch sử vé đã đặt.
      */
     @GetMapping("/my-history")
-    public ResponseEntity<ApiResponse<java.util.List<HoldSeatResponse>>> getMyTickets(
-            @RequestParam(value = "userId", required = false) Long userId,
+    public ResponseEntity<ApiResponse<java.util.List<HoldSeatResponse>>> getMyHistory(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(value = "userId", required = false) Long paramUserId,
             @RequestParam(value = "phone", required = false) String phone) {
-        java.util.List<HoldSeatResponse> list = bookingService.getUserTickets(userId, phone);
+        // Ưu tiên userId từ JWT Token đã xác thực
+        Long effectiveUserId = (userDetails != null) ? userDetails.getId() : paramUserId;
+        java.util.List<HoldSeatResponse> list = bookingService.getUserTickets(effectiveUserId, phone);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử vé thành công", list));
     }
 }

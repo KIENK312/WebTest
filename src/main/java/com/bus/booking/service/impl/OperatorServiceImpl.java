@@ -162,22 +162,78 @@ public class OperatorServiceImpl implements OperatorService {
     }
 
     /**
-     * Xử lý giải quyết operatorId an toàn:
-     * - Nếu operatorId được truyền và tồn tại trong DB -> giữ nguyên
-     * - Nếu operatorId không tồn tại hoặc null -> tự động tìm nhà xe đầu tiên hợp lệ trong DB
+     * Lấy danh sách đối tác nhà xe theo phân quyền người dùng:
+     * - Admin: Toàn bộ danh sách nhà xe đang hợp tác
+     * - Operator (Phương Trang, Hoàng Long...): Duy nhất nhà xe của họ
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.bus.booking.dto.response.PartnerDto> getPartnersForCurrentScope() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.getPrincipal() instanceof com.bus.booking.security.CustomUserDetails userDetails) {
+            boolean isAdmin = userDetails.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin && userDetails.getOperatorId() != null) {
+                // OPERATOR: Chỉ trả về đối tác của chính mình
+                return busOperatorRepository.findById(userDetails.getOperatorId())
+                        .map(op -> List.of(toPartnerDto(op)))
+                        .orElse(List.of());
+            }
+        }
+
+        // ADMIN: Trả về toàn bộ danh sách nhà xe đối tác
+        return busOperatorRepository.findAll().stream()
+                .map(this::toPartnerDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Xử lý giải quyết operatorId an toàn theo phân quyền:
+     * - Nếu đăng nhập tài khoản ADMIN: có thể xem toàn bộ (khi operatorId == null) hoặc xem bất kỳ nhà xe nào
+     * - Nếu đăng nhập tài khoản OPERATOR: BẮT BUỘC chỉ được xem nhà xe của họ
      */
     @Override
     @Transactional(readOnly = true)
     public Long resolveOperatorId(Long operatorId) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.getPrincipal() instanceof com.bus.booking.security.CustomUserDetails userDetails) {
+            boolean isAdmin = userDetails.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (isAdmin) {
+                if (operatorId != null && busOperatorRepository.existsById(operatorId)) {
+                    return operatorId;
+                }
+                return null; // Admin không chọn nhà xe cụ thể -> xem toàn bộ hệ thống
+            }
+
+            // Đối tác nhà xe (OPERATOR): Luôn luôn gắn chặt với nhà xe của mình
+            if (userDetails.getOperatorId() != null) {
+                return userDetails.getOperatorId();
+            }
+        }
+
         if (operatorId != null && busOperatorRepository.existsById(operatorId)) {
             return operatorId;
         }
+        return null;
+    }
 
-        // Fallback: Tìm nhà xe đầu tiên hợp lệ trong DB
-        return busOperatorRepository.findAll().stream()
-                .findFirst()
-                .map(BusOperatorEntity::getId)
-                .orElse(null);
+    private com.bus.booking.dto.response.PartnerDto toPartnerDto(BusOperatorEntity op) {
+        if (op == null) return null;
+        return com.bus.booking.dto.response.PartnerDto.builder()
+                .id(op.getId())
+                .name(op.getName())
+                .code(op.getCode())
+                .contactPhone(op.getContactPhone())
+                .contactEmail(op.getContactEmail())
+                .address(op.getAddress())
+                .status(op.getStatus() != null ? op.getStatus() : com.bus.booking.enums.OperatorStatus.ACTIVE)
+                .createdAt(op.getCreatedAt())
+                .build();
     }
 
     // ============================================================

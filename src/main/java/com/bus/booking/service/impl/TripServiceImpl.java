@@ -53,42 +53,86 @@ public class TripServiceImpl implements TripService {
             endTime = request.getEndTime();
         } else {
             startTime = LocalDateTime.now();
-            endTime = startTime.plusDays(7);
+            endTime = startTime.plusDays(30); // Tải toàn bộ chuyến xe mở bán trong 30 ngày
         }
 
+        String origin = (request.getDeparturePoint() != null && !request.getDeparturePoint().isBlank())
+                ? request.getDeparturePoint().trim() : null;
+        String dest = (request.getArrivalPoint() != null && !request.getArrivalPoint().isBlank())
+                ? request.getArrivalPoint().trim() : null;
+
+        boolean isGeneralSearch = (origin == null && dest == null 
+                && request.getDepartureDate() == null && request.getStartTime() == null);
+
         // 2. Truy vấn danh sách chuyến xe khớp tuyến đường và xe ACTIVE (JOIN FETCH đầy đủ, không N+1)
-        List<TripEntity> rawTrips = tripRepository.findAvailableTrips(
-                request.getDeparturePoint().trim(),
-                request.getArrivalPoint().trim(),
-                startTime,
-                endTime
-        );
+        List<TripEntity> rawTrips;
+        if (isGeneralSearch) {
+            // Trường hợp tải trang chung (trips.html không truyền lọc): Lấy TOÀN BỘ chuyến xe mở bán khả dụng
+            rawTrips = tripRepository.findAllAvailableTrips();
+        } else {
+            rawTrips = tripRepository.findAvailableTrips(
+                    origin,
+                    dest,
+                    startTime,
+                    endTime
+            );
+
+            // Fallback linh hoạt: Nếu ngày tìm kiếm chính xác không còn chuyến, tìm các chuyến khả dụng không giới hạn ngày cho tuyến đó
+            if (rawTrips.isEmpty() && (origin != null || dest != null)) {
+                log.info("Không có chuyến trong ngày {}, tự động tìm kiếm tất cả chuyến xe khả dụng cho tuyến {} -> {}",
+                        request.getDepartureDate(), origin, dest);
+                rawTrips = tripRepository.findAvailableTrips(
+                        origin,
+                        dest,
+                        null,
+                        null
+                );
+            }
+        }
 
         if (rawTrips.isEmpty()) {
             return List.of();
         }
 
-        // 3. Tối ưu hóa N+1: Lọc bảo trì hàng loạt trong 1 câu truy vấn SQL duy nhất
-        List<Long> busIds = rawTrips.stream().map(t -> t.getBus().getId()).distinct().toList();
-        List<Long> maintenanceBusIds = maintenanceLogRepository.findBusIdsInMaintenance(busIds, startTime, endTime);
-        java.util.Set<Long> maintenanceBusSet = new java.util.HashSet<>(maintenanceBusIds);
-
+        // 3. Tối ưu hóa: Lọc bỏ các chuyến xe có phương tiện đang trùng lịch bảo trì thực tế
         List<TripEntity> validTrips = rawTrips.stream()
-                .filter(trip -> !maintenanceBusSet.contains(trip.getBus().getId()))
+                .filter(trip -> {
+                    LocalDateTime tripStart = trip.getDepartureTime() != null ? trip.getDepartureTime() : startTime;
+                    LocalDateTime tripEnd = trip.getArrivalTime() != null ? trip.getArrivalTime() : endTime;
+                    return !maintenanceLogRepository.hasOverlappingMaintenance(trip.getBus().getId(), tripStart, tripEnd);
+                })
                 .toList();
 
         if (validTrips.isEmpty()) {
             return List.of();
         }
 
+        // 3.1 Lọc theo mã hãng xe (FUTA, THANHBUOI) nếu có yêu cầu
+        if (request.getOperatorCode() != null && !request.getOperatorCode().isBlank()) {
+            String opCode = request.getOperatorCode().trim();
+            validTrips = validTrips.stream()
+                    .filter(t -> opCode.equalsIgnoreCase(t.getRoute().getOperator().getCode()))
+                    .toList();
+            if (validTrips.isEmpty()) {
+                return List.of();
+            }
+        }
+
         // 4. Tối ưu hóa N+1: Gom đếm số ghế đã đặt cho toàn bộ chuyến bằng 1 câu SQL GROUP BY
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(10);
         List<Long> tripIds = validTrips.stream().map(TripEntity::getId).toList();
-        Map<Long, Long> bookedSeatsMap = ticketRepository.countBookedSeatsByTripIds(tripIds, cutoff).stream()
-                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        List<Object[]> bookedSeatsCounts = ticketRepository.countBookedSeatsByTripIds(tripIds, cutoff);
+        Map<Long, Long> bookedSeatsMap = (bookedSeatsCounts != null && !bookedSeatsCounts.isEmpty())
+                ? bookedSeatsCounts.stream().collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]))
+                : new java.util.HashMap<>();
 
         return validTrips.stream()
-                .map(trip -> mapToTripSearchResponse(trip, bookedSeatsMap.getOrDefault(trip.getId(), 0L)))
+                .map(trip -> {
+                    long bookedSeats = bookedSeatsMap.containsKey(trip.getId())
+                            ? bookedSeatsMap.get(trip.getId())
+                            : ticketRepository.countByTripIdAndStatusIn(trip.getId(), List.of(TicketStatus.CONFIRMED, TicketStatus.PENDING));
+                    return mapToTripSearchResponse(trip, bookedSeats);
+                })
                 .toList();
     }
 

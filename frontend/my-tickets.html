@@ -147,19 +147,27 @@
       if (user?.phone) {
         document.getElementById('lookup-phone').value = user.phone;
       }
+      // Điều chỉnh giao diện thanh tìm kiếm số điện thoại nếu đã đăng nhập
+      const phoneBox = document.getElementById('phone-lookup-box');
+      if (user) {
+        phoneBox.classList.add('bg-blue-50/50', 'border-blue-200');
+        phoneBox.querySelector('.flex.items-center.gap-3 div span').textContent = `Tài khoản: ${user.fullName || user.username} (${user.role === 'ROLE_ADMIN' ? 'Admin' : user.role === 'ROLE_OPERATOR' ? 'Nhà xe' : 'Khách hàng'})`;
+        phoneBox.querySelector('.flex.items-center.gap-3 div p').textContent = 'Hệ thống tự động đồng bộ vé theo tài khoản đăng nhập của bạn';
+      }
       await loadTickets();
     })();
 
+    // Tải danh sách vé: Bảo mật tuyệt đối qua JWT Token
     async function loadTickets() {
       const user = getCurrentUser();
       const phone = document.getElementById('lookup-phone')?.value.trim();
 
       const params = {};
-      if (user?.userId) params.userId = user.userId;
       if (phone) params.phone = phone;
 
       try {
-        const data = await fetchAPI('/tickets/my-history', 'GET', null, params);
+        // Gọi API /tickets/my-tickets được bảo vệ bằng JWT token trong header Authorization
+        const data = await fetchAPI('/tickets/my-tickets', 'GET', null, params);
         tickets = Array.isArray(data) ? data : [];
         renderTickets();
       } catch (err) {
@@ -182,7 +190,7 @@
         const btn = document.getElementById(`tab-${t}`);
         if (!btn) return;
         if (t === status.toLowerCase()) {
-          btn.className = 'h-9 px-3.5 rounded-xl text-xs font-extrabold transition bg-orange-600 text-white shadow-xs';
+          btn.className = 'h-9 px-3.5 rounded-xl text-xs font-extrabold transition bg-blue-600 text-white shadow-xs';
         } else {
           btn.className = 'h-9 px-3.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition';
         }
@@ -215,11 +223,22 @@
         const isPending   = ticket.status === 'PENDING';
         const isCancelled = ticket.status === 'CANCELLED';
 
+        const depTime = formatTime(ticket.departureTime);
+        const arrTime = formatTime(ticket.arrivalTime);
+        const depDate = formatDate(ticket.departureTime);
+        const arrDate = formatDate(ticket.arrivalTime);
+        const origin  = ticket.origin || 'Điểm khởi hành';
+        const dest    = ticket.destination || 'Điểm đến';
+        const opName  = ticket.operatorName || 'Nhà xe đối tác';
+        const plate   = ticket.busPlateNumber || '—';
+        const busType = ticket.busType || 'Giường nằm';
+
         return `
-          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-300">
+          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300">
+            <!-- Header vé -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-black text-sm">
+                <div class="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-base shadow-xs">
                   <i class="fa-solid fa-ticket"></i>
                 </div>
                 <div>
@@ -231,53 +250,90 @@
                 </div>
               </div>
               <div class="text-left sm:text-right">
-                <span class="text-[11px] text-slate-400 font-bold block">Giá vé</span>
-                <span class="text-xl font-black text-orange-600">${formatVND(ticket.price)}</span>
+                <span class="text-[11px] text-slate-400 font-bold block">Tổng tiền</span>
+                <span class="text-xl sm:text-2xl font-black text-blue-600">${formatVND(ticket.price)}</span>
               </div>
             </div>
 
-            <!-- Ticket details info -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 text-xs font-semibold text-slate-700">
+            <!-- Lịch trình & Giờ xe chạy (HIỂN THỊ RÕ RÀNG VẤN ĐỀ 4) -->
+            <div class="bg-slate-50/70 rounded-2xl p-4 my-4 border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-bus text-blue-600"></i>
+                  <span>${opName}</span>
+                </span>
+                <span class="text-[11px] font-semibold text-slate-500">Xe: <strong>${plate}</strong> • ${busType}</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                <!-- Giờ xuất bến -->
+                <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-sm">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-blue-600 block">Giờ xuất bến</span>
+                    <div class="text-lg font-black text-slate-900">${depTime}</div>
+                    <div class="text-xs font-bold text-slate-700">${origin} • <span class="text-slate-400 font-medium">${depDate}</span></div>
+                  </div>
+                </div>
+
+                <!-- Giờ đến dự kiến -->
+                <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 block">Dự kiến đến</span>
+                    <div class="text-lg font-black text-slate-900">${arrTime}</div>
+                    <div class="text-xs font-bold text-slate-700">${dest} • <span class="text-slate-400 font-medium">${arrDate}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chi tiết hành khách & vị trí ghế -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2 text-xs font-semibold text-slate-700">
               <div>
                 <span class="text-[10px] text-slate-400 block font-bold">HÀNH KHÁCH</span>
-                <span class="truncate block">${ticket.customerName || '—'}</span>
+                <span class="truncate block font-bold text-slate-900">${ticket.customerName || '—'}</span>
               </div>
               <div>
                 <span class="text-[10px] text-slate-400 block font-bold">SỐ ĐIỆN THOẠI</span>
-                <span>${ticket.customerPhone || '—'}</span>
+                <span class="font-bold text-slate-900">${ticket.customerPhone || '—'}</span>
               </div>
               <div>
                 <span class="text-[10px] text-slate-400 block font-bold">VỊ TRÍ GHẾ</span>
-                <span class="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">Ghế ${ticket.seatNumber}</span>
+                <span class="font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg inline-block">Ghế ${ticket.seatNumber}</span>
               </div>
               <div>
                 <span class="text-[10px] text-slate-400 block font-bold">MÃ CHUYẾN</span>
-                <span>Chuyến #${ticket.tripId}</span>
+                <span class="font-bold text-slate-700">Chuyến #${ticket.tripId}</span>
               </div>
             </div>
 
             <!-- Actions footer -->
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
               ${isConfirmed ? `
-                <button onclick="openTicketModal('${ticket.ticketCode}', '${ticket.customerName}', '${ticket.seatNumber}', ${ticket.tripId})"
-                        class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs shadow-xs transition flex items-center gap-1.5">
+                <button onclick="openTicketModal('${ticket.ticketCode}', '${ticket.customerName}', '${ticket.seatNumber}', ${ticket.tripId}, '${origin}', '${dest}', '${depTime}', '${depDate}', '${opName}', '${plate}')"
+                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md transition flex items-center gap-1.5">
                   <i class="fa-solid fa-qrcode"></i> Xem vé điện tử lên xe
                 </button>
               ` : ''}
 
               ${isPending ? `
                 <a href="payment.html?ticketId=${ticket.ticketId}"
-                   class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-xs transition flex items-center gap-1.5">
+                   class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md transition flex items-center gap-1.5">
                   <i class="fa-solid fa-credit-card"></i> Thanh toán ngay
                 </a>
                 <button onclick="cancelTicketAction(${ticket.ticketId})"
-                        class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs transition">
+                        class="px-3.5 py-2.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs transition">
                   Hủy vé
                 </button>
               ` : ''}
 
               ${isCancelled ? `
-                <span class="text-xs text-slate-400 italic">Vé đã bị hủy</span>
+                <span class="text-xs text-slate-400 italic font-medium"><i class="fa-solid fa-ban text-[10px] mr-1"></i>Vé đã bị hủy</span>
               ` : ''}
             </div>
 
@@ -287,21 +343,24 @@
     }
 
     // Modal hiển thị mã QR vé lên xe
-    function openTicketModal(code, name, seat, tripId) {
+    function openTicketModal(code, name, seat, tripId, origin, dest, depTime, depDate, opName, plate) {
       const modal = document.getElementById('ticket-modal');
       const content = document.getElementById('ticket-modal-content');
 
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=TICKET:${code}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=BUS-TICKET:${code}`;
 
       content.innerHTML = `
         <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 inline-block shadow-inner">
           <img src="${qrUrl}" alt="Mã QR vé" class="w-48 h-48 mx-auto rounded-xl" />
         </div>
         <div>
-          <div class="text-sm font-mono font-black text-slate-800">${code}</div>
+          <div class="text-base font-mono font-black text-slate-900 tracking-wider">${code}</div>
           <p class="text-xs text-slate-400 mt-0.5">Xuất trình mã này cho phụ xe khi lên xe</p>
         </div>
-        <div class="bg-slate-50 p-3 rounded-2xl text-xs font-semibold text-slate-600 text-left space-y-1 border border-slate-100">
+        <div class="bg-slate-50 p-3.5 rounded-2xl text-xs font-semibold text-slate-600 text-left space-y-1.5 border border-slate-100">
+          <div class="flex justify-between"><span class="text-slate-400">Tuyến đường:</span> <strong class="text-slate-900 font-extrabold">${origin || '—'} ➔ ${dest || '—'}</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Giờ xuất bến:</span> <strong class="text-blue-600 font-extrabold">${depTime || '—'} (${depDate || '—'})</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Nhà xe / Xe:</span> <strong>${opName || '—'} • ${plate || '—'}</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Hành khách:</span> <strong>${name}</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Vị trí ghế:</span> <strong class="text-emerald-600 font-extrabold">Ghế ${seat}</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Chuyến xe:</span> <strong>#${tripId}</strong></div>
@@ -326,7 +385,9 @@
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
-        confirmButtonText: 'Đồng ý hủy'
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Đồng ý hủy',
+        cancelButtonText: 'Giữ lại vé'
       });
 
       if (confirm.isConfirmed) {

@@ -219,59 +219,73 @@
   // ===== KHỞI TẠO =====
   (async function init() {
     if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
-    const user = getCurrentUser();
+    user = getCurrentUser();
     const role = user?.role || '';
-    if (!role.includes('OPERATOR') && !role.includes('ADMIN')) {
+    if (role !== 'OPERATOR' && role !== 'ROLE_OPERATOR' && !role.includes('OPERATOR') && !role.includes('ADMIN')) {
       showToast('Bạn không có quyền truy cập trang này!', 'error');
       setTimeout(() => { window.location.href = 'index.html'; }, 1500);
       return;
     }
     renderNavbar('operator');
-    document.getElementById('operator-name').textContent = `👤 ${user?.fullName || user?.username}`;
 
-    // Khởi tạo nhà xe hiện tại
-    currentOpId = user?.operatorId || null;
+    const isAdmin = role.includes('ADMIN');
+    const opSelectContainer = document.getElementById('operator-select-container');
+    const opNameBadge = document.getElementById('operator-name');
 
-    // Nếu là admin hoặc có thể quản lý nhiều nhà xe, nạp danh sách đối tác
-    await loadPartnerSelector();
+    if (isAdmin) {
+      // 1. Quản trị viên (Admin): xem tất cả nhà xe đang hợp tác, có dropdown chuyển đổi linh hoạt
+      opNameBadge.innerHTML = `<span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-500"></i> Quản Trị Viên (Toàn quyền)</span>`;
+      opSelectContainer.classList.remove('hidden');
+      opSelectContainer.classList.add('flex');
+      currentOpId = null; // Admin mặc định xem tất cả
+      await loadAdminPartnerSelector();
+    } else {
+      // 2. Đối tác nhà xe (Phương Trang, Hoàng Long...): CHỈ ĐƯỢC XEM NHÀ XE CỦA HỌ
+      opSelectContainer.classList.add('hidden');
+      opSelectContainer.classList.remove('flex');
+      currentOpId = user?.operatorId || null;
+
+      // Hiển thị tên nhà xe cụ thể
+      const opDisplayName = user?.operatorName || user?.fullName || 'Đối tác vận tải';
+      opNameBadge.innerHTML = `<span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-building-flag text-blue-600"></i> Nhà xe: <strong>${opDisplayName}</strong></span>`;
+    }
+
     await reloadAllData();
   })();
 
   // Lấy ID nhà xe đang được chọn
   function getSelectedOperatorId() {
-    const sel = document.getElementById('operator-select');
-    if (sel && sel.value) {
-      return Number(sel.value);
+    const role = user?.role || '';
+    const isAdmin = role.includes('ADMIN');
+    if (isAdmin) {
+      const sel = document.getElementById('operator-select');
+      if (sel && sel.value !== '') {
+        return Number(sel.value);
+      }
+      return null; // Admin chọn "Tất cả nhà xe"
     }
-    return currentOpId;
+    // Operator: luôn trả về operatorId của chính tài khoản
+    return user?.operatorId || currentOpId;
   }
 
-  // Tải danh sách nhà xe để chuyển đổi (dành cho Admin hoặc chọn nhà xe)
-  async function loadPartnerSelector() {
+  // Tải danh sách nhà xe cho Admin chọn
+  async function loadAdminPartnerSelector() {
     try {
-      const data = await fetchAPI('/admin/partners');
+      const data = await fetchAPI('/operator/partners');
       partners = Array.isArray(data) ? data : [];
-      if (partners.length > 0) {
-        const container = document.getElementById('operator-select-container');
-        const select = document.getElementById('operator-select');
-        select.innerHTML = partners.map(p => 
-          `<option value="${p.id}" ${p.id === currentOpId ? 'selected' : ''}>${p.name} (${p.code})</option>`
-        ).join('');
-
-        if (!currentOpId && partners.length > 0) {
-          currentOpId = partners[0].id;
-        }
-        container.classList.remove('hidden');
-        container.classList.add('flex');
-      }
+      const select = document.getElementById('operator-select');
+      select.innerHTML = `
+        <option value="">-- Tất cả nhà xe hợp tác (${partners.length}) --</option>
+        ${partners.map(p => `<option value="${p.id}">${p.name} (${p.code})</option>`).join('')}
+      `;
     } catch (e) {
-      // Bỏ qua nếu không phải Admin hoặc endpoint không khả dụng
+      console.error('Không thể nạp danh sách đối tác', e);
     }
   }
 
   async function onOperatorChanged() {
     const sel = document.getElementById('operator-select');
-    currentOpId = Number(sel.value);
+    currentOpId = sel.value ? Number(sel.value) : null;
     await reloadAllData();
   }
 

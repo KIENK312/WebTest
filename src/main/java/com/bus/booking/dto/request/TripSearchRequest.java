@@ -1,6 +1,5 @@
 package com.bus.booking.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -14,11 +13,10 @@ import java.time.LocalDateTime;
 @Builder
 public class TripSearchRequest {
 
-    @NotBlank(message = "Điểm khởi hành không được để trống")
+    // Tùy chọn: Nếu để trống, hệ thống sẽ trả về tất cả chuyến xe đang mở bán
     private String departurePoint;
-
-    @NotBlank(message = "Điểm đến không được để trống")
     private String arrivalPoint;
+    private String operatorCode;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate departureDate;

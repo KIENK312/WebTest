@@ -47,7 +47,27 @@ public class DataInitializer implements CommandLineRunner {
                 roleRepository.save(RoleEntity.builder().name("ROLE_CUSTOMER").description("Khách hàng đặt vé").build())
         );
 
-        // 2. Bus Operators
+        // 2. Dọn dẹp dữ liệu Thành Bưởi (theo yêu cầu loại bỏ nhà xe Thành Bưởi)
+        busOperatorRepository.findByCode("THANHBUOI").ifPresent(tb -> {
+            log.info("Phát hiện dữ liệu cũ của Thành Bưởi (THANHBUOI), tiến hành loại bỏ theo yêu cầu...");
+            userRepository.findByUsername("operator_thanhbuoi").ifPresent(userRepository::delete);
+            List<BusEntity> tbBuses = busRepository.findByOperatorIdWithOperator(tb.getId());
+            for (BusEntity b : tbBuses) {
+                List<TripEntity> tbTrips = tripRepository.findByBusId(b.getId());
+                for (TripEntity t : tbTrips) {
+                    ticketRepository.deleteAll(ticketRepository.findByTripId(t.getId()));
+                    tripRepository.delete(t);
+                }
+                seatRepository.deleteAll(seatRepository.findByBusIdOrderBySeatNumberAsc(b.getId()));
+                busRepository.delete(b);
+            }
+            List<RouteEntity> tbRoutes = routeRepository.findByOperatorIdWithOperator(tb.getId());
+            routeRepository.deleteAll(tbRoutes);
+            busOperatorRepository.delete(tb);
+            log.info("Đã loại bỏ hoàn toàn dữ liệu nhà xe Thành Bưởi khỏi hệ thống.");
+        });
+
+        // 3. Khởi tạo 2 Đối tác chiến lược chính: PHƯƠNG TRANG (FUTA) và HOÀNG LONG (HOANGLONG)
         BusOperatorEntity futa = busOperatorRepository.findByCode("FUTA").orElseGet(() ->
                 busOperatorRepository.save(BusOperatorEntity.builder()
                         .name("Công ty Cổ phần Xe khách Phương Trang (FUTA Bus Lines)")
@@ -61,7 +81,7 @@ public class DataInitializer implements CommandLineRunner {
 
         BusOperatorEntity hoangLong = busOperatorRepository.findByCode("HOANGLONG").orElseGet(() ->
                 busOperatorRepository.save(BusOperatorEntity.builder()
-                        .name("Công ty TNHH Vận tải Hoàng Long (Hoàng Long Asia)")
+                        .name("Công ty TNHH Vận tải Hoàng Long (Hoàng Long Bus Lines)")
                         .code("HOANGLONG")
                         .contactPhone("02253920920")
                         .contactEmail("info@hoanglongasia.com")
@@ -70,7 +90,7 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        // 3. Users (Tạo sẵn 4 tài khoản chuẩn)
+        // 4. Users (Tạo sẵn các tài khoản chuẩn theo phân quyền)
         if (!userRepository.existsByUsername("admin")) {
             userRepository.save(UserEntity.builder()
                     .username("admin")
@@ -95,7 +115,7 @@ public class DataInitializer implements CommandLineRunner {
                     .operator(futa)
                     .status(UserStatus.ACTIVE)
                     .build());
-            log.info("Đã tạo tài khoản OPERATOR: operator_futa / Operator@123");
+            log.info("Đã tạo tài khoản OPERATOR: operator_futa / Operator@123 (Phương Trang)");
         }
 
         if (!userRepository.existsByUsername("operator_hoanglong")) {
@@ -109,24 +129,35 @@ public class DataInitializer implements CommandLineRunner {
                     .operator(hoangLong)
                     .status(UserStatus.ACTIVE)
                     .build());
-            log.info("Đã tạo tài khoản OPERATOR: operator_hoanglong / Operator@123");
+            log.info("Đã tạo tài khoản OPERATOR: operator_hoanglong / Operator@123 (Hoàng Long)");
         }
 
-        if (!userRepository.existsByUsername("customer")) {
-            userRepository.save(UserEntity.builder()
-                    .username("customer")
-                    .password(passwordEncoder.encode("Customer@123"))
-                    .fullName("Nguyễn Văn Khách")
-                    .email("customer@gmail.com")
-                    .phoneNumber("0987654321")
-                    .role(roleCustomer)
-                    .status(UserStatus.ACTIVE)
-                    .build());
-            log.info("Đã tạo tài khoản CUSTOMER: customer / Customer@123");
-        }
+        // Tài khoản khách hàng mẫu chính thức: NGUYỄN TRUNG KIÊN
+        userRepository.findByUsername("customer").ifPresentOrElse(
+                user -> {
+                    user.setFullName("Nguyễn Trung Kiên");
+                    user.setEmail("kientrungnguyen@gmail.com");
+                    user.setPhoneNumber("0987654321");
+                    userRepository.save(user);
+                    log.info("Đã đồng bộ thông tin tài khoản CUSTOMER: Nguyễn Trung Kiên");
+                },
+                () -> {
+                    userRepository.save(UserEntity.builder()
+                            .username("customer")
+                            .password(passwordEncoder.encode("Customer@123"))
+                            .fullName("Nguyễn Trung Kiên")
+                            .email("kientrungnguyen@gmail.com")
+                            .phoneNumber("0987654321")
+                            .role(roleCustomer)
+                            .status(UserStatus.ACTIVE)
+                            .build());
+                    log.info("Đã tạo tài khoản CUSTOMER: customer / Customer@123 (Họ tên: Nguyễn Trung Kiên)");
+                }
+        );
 
-        // 4. Tuyến đường (Routes)
+        // 5. Tuyến đường (Routes) - Phủ khắp cho cả Phương Trang và Hoàng Long
         if (routeRepository.count() == 0) {
+            // Tuyến của Phương Trang
             routeRepository.save(RouteEntity.builder()
                     .operator(futa).origin("Hà Nội").destination("Đà Nẵng")
                     .distanceKm(new BigDecimal("770.0")).estimatedDurationHours(new BigDecimal("14.0"))
@@ -138,13 +169,8 @@ public class DataInitializer implements CommandLineRunner {
                     .status("ACTIVE").build());
 
             routeRepository.save(RouteEntity.builder()
-                    .operator(hoangLong).origin("Hà Nội").destination("Sa Pa")
-                    .distanceKm(new BigDecimal("320.0")).estimatedDurationHours(new BigDecimal("6.0"))
-                    .status("ACTIVE").build());
-
-            routeRepository.save(RouteEntity.builder()
-                    .operator(hoangLong).origin("Sài Gòn").destination("Nha Trang")
-                    .distanceKm(new BigDecimal("430.0")).estimatedDurationHours(new BigDecimal("9.0"))
+                    .operator(futa).origin("Đà Lạt").destination("Sài Gòn")
+                    .distanceKm(new BigDecimal("310.0")).estimatedDurationHours(new BigDecimal("8.0"))
                     .status("ACTIVE").build());
 
             routeRepository.save(RouteEntity.builder()
@@ -152,11 +178,38 @@ public class DataInitializer implements CommandLineRunner {
                     .distanceKm(new BigDecimal("170.0")).estimatedDurationHours(new BigDecimal("3.5"))
                     .status("ACTIVE").build());
 
-            log.info("Đã khởi tạo 5 tuyến đường phổ biến");
+            routeRepository.save(RouteEntity.builder()
+                    .operator(futa).origin("Sài Gòn").destination("Nha Trang")
+                    .distanceKm(new BigDecimal("430.0")).estimatedDurationHours(new BigDecimal("9.0"))
+                    .status("ACTIVE").build());
+
+            // Tuyến của Hoàng Long
+            routeRepository.save(RouteEntity.builder()
+                    .operator(hoangLong).origin("Hà Nội").destination("Hải Phòng")
+                    .distanceKm(new BigDecimal("120.0")).estimatedDurationHours(new BigDecimal("2.0"))
+                    .status("ACTIVE").build());
+
+            routeRepository.save(RouteEntity.builder()
+                    .operator(hoangLong).origin("Hải Phòng").destination("Hà Nội")
+                    .distanceKm(new BigDecimal("120.0")).estimatedDurationHours(new BigDecimal("2.0"))
+                    .status("ACTIVE").build());
+
+            routeRepository.save(RouteEntity.builder()
+                    .operator(hoangLong).origin("Hà Nội").destination("Sa Pa")
+                    .distanceKm(new BigDecimal("320.0")).estimatedDurationHours(new BigDecimal("6.0"))
+                    .status("ACTIVE").build());
+
+            routeRepository.save(RouteEntity.builder()
+                    .operator(hoangLong).origin("Hà Nội").destination("Đà Nẵng")
+                    .distanceKm(new BigDecimal("770.0")).estimatedDurationHours(new BigDecimal("14.0"))
+                    .status("ACTIVE").build());
+
+            log.info("Đã khởi tạo 9 tuyến đường trọng điểm cho Phương Trang và Hoàng Long");
         }
 
-        // 5. Đội xe (Buses)
+        // 6. Đội xe (Buses) - Phương Trang và Hoàng Long
         if (busRepository.count() == 0) {
+            // Xe Phương Trang
             BusEntity bus1 = busRepository.save(BusEntity.builder()
                     .operator(futa).plateNumber("51B-123.45").busType("Giường nằm 36 chỗ")
                     .totalSeats(36).status(BusStatus.ACTIVE).build());
@@ -167,73 +220,103 @@ public class DataInitializer implements CommandLineRunner {
 
             BusEntity bus3 = busRepository.save(BusEntity.builder()
                     .operator(futa).plateNumber("51B-555.55").busType("Giường nằm 36 chỗ")
-                    .totalSeats(36).status(BusStatus.MAINTENANCE).build()); // Xe bảo dưỡng để test cảnh báo
+                    .totalSeats(36).status(BusStatus.MAINTENANCE).build());
 
-            BusEntity bus4 = busRepository.save(BusEntity.builder()
+            // Xe Hoàng Long
+            BusEntity busHl1 = busRepository.save(BusEntity.builder()
                     .operator(hoangLong).plateNumber("29B-456.78").busType("Giường nằm 36 chỗ")
                     .totalSeats(36).status(BusStatus.ACTIVE).build());
 
-            BusEntity bus5 = busRepository.save(BusEntity.builder()
+            BusEntity busHl2 = busRepository.save(BusEntity.builder()
                     .operator(hoangLong).plateNumber("29B-888.88").busType("Limousine VIP 24 phòng")
                     .totalSeats(24).status(BusStatus.ACTIVE).build());
 
-            // 6. Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A18, Tầng 2 B01..B18)
+            BusEntity busHl3 = busRepository.save(BusEntity.builder()
+                    .operator(hoangLong).plateNumber("29B-999.99").busType("Limousine VIP 24 phòng")
+                    .totalSeats(24).status(BusStatus.ACTIVE).build());
+
+            // Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A18, Tầng 2 B01..B18)
             createSeatsForBus(bus1, 36, "STANDARD");
             createSeatsForBus(bus2, 24, "VIP");
             createSeatsForBus(bus3, 36, "STANDARD");
-            createSeatsForBus(bus4, 36, "STANDARD");
-            createSeatsForBus(bus5, 24, "VIP");
+            createSeatsForBus(busHl1, 36, "STANDARD");
+            createSeatsForBus(busHl2, 24, "VIP");
+            createSeatsForBus(busHl3, 24, "VIP");
 
-            log.info("Đã khởi tạo đội xe và sơ đồ ghế 2 tầng");
+            log.info("Đã khởi tạo đội xe và sơ đồ ghế 2 tầng cho Phương Trang & Hoàng Long");
         }
 
-        // 7. Chuyến xe (Trips)
-        if (tripRepository.count() == 0) {
+        // 7. Chuyến xe (Trips) - Khởi tạo lịch trình phong phú trong 30 ngày tới
+        LocalDateTime now = LocalDateTime.now();
+        long futureTripsCount = tripRepository.findAll().stream()
+                .filter(t -> t.getDepartureTime() != null && t.getDepartureTime().isAfter(now))
+                .count();
+
+        if (tripRepository.count() == 0 || futureTripsCount < 50) {
             List<RouteEntity> allRoutes = routeRepository.findAll();
             List<BusEntity> activeBuses = busRepository.findByStatus(BusStatus.ACTIVE);
 
             LocalDate today = LocalDate.now();
             List<TripEntity> tripsToSave = new ArrayList<>();
 
-            for (int dayOffset = 0; dayOffset <= 5; dayOffset++) {
+            for (int dayOffset = 0; dayOffset <= 30; dayOffset++) {
                 LocalDate tripDate = today.plusDays(dayOffset);
 
                 for (RouteEntity route : allRoutes) {
-                    BusEntity assignedBus = activeBuses.stream()
+                    List<BusEntity> opBuses = activeBuses.stream()
                             .filter(b -> b.getOperator().getId().equals(route.getOperator().getId()))
-                            .findFirst()
-                            .orElse(activeBuses.get(0));
+                            .toList();
 
-                    BigDecimal price = route.getDestination().contains("Đà Nẵng") ? new BigDecimal("450000.00")
+                    if (opBuses.isEmpty()) {
+                        opBuses = activeBuses;
+                    }
+
+                    BigDecimal baseFare = route.getDestination().contains("Đà Nẵng") ? new BigDecimal("450000.00")
                             : route.getDestination().contains("Đà Lạt") ? new BigDecimal("320000.00")
                             : route.getDestination().contains("Sa Pa") ? new BigDecimal("280000.00")
                             : route.getDestination().contains("Nha Trang") ? new BigDecimal("350000.00")
                             : new BigDecimal("190000.00");
 
-                    // Chuyến sáng
+                    long durationHours = route.getEstimatedDurationHours() != null
+                            ? route.getEstimatedDurationHours().longValue() : 8L;
+
+                    // 1. Chuyến sáng sớm (06:30)
+                    BusEntity busMorning = opBuses.get((dayOffset * 3) % opBuses.size());
                     tripsToSave.add(TripEntity.builder()
                             .route(route)
-                            .bus(assignedBus)
-                            .departureTime(tripDate.atTime(7, 30))
-                            .arrivalTime(tripDate.atTime(7, 30).plusHours(route.getEstimatedDurationHours().longValue()))
-                            .basePrice(price)
+                            .bus(busMorning)
+                            .departureTime(tripDate.atTime(6, 30))
+                            .arrivalTime(tripDate.atTime(6, 30).plusHours(durationHours))
+                            .basePrice(busMorning.getBusType().contains("Limousine") ? baseFare.add(new BigDecimal("70000.00")) : baseFare)
                             .status(TripStatus.SCHEDULED)
                             .build());
 
-                    // Chuyến chiều / tối
+                    // 2. Chuyến buổi trưa/chiều (13:30)
+                    BusEntity busAfternoon = opBuses.get((dayOffset * 3 + 1) % opBuses.size());
                     tripsToSave.add(TripEntity.builder()
                             .route(route)
-                            .bus(assignedBus)
-                            .departureTime(tripDate.atTime(19, 0))
-                            .arrivalTime(tripDate.atTime(19, 0).plusHours(route.getEstimatedDurationHours().longValue()))
-                            .basePrice(price.add(new BigDecimal("30000.00")))
+                            .bus(busAfternoon)
+                            .departureTime(tripDate.atTime(13, 30))
+                            .arrivalTime(tripDate.atTime(13, 30).plusHours(durationHours))
+                            .basePrice(busAfternoon.getBusType().contains("Limousine") ? baseFare.add(new BigDecimal("70000.00")) : baseFare)
+                            .status(TripStatus.SCHEDULED)
+                            .build());
+
+                    // 3. Chuyến buổi tối (19:30)
+                    BusEntity busEvening = opBuses.get((dayOffset * 3 + 2) % opBuses.size());
+                    tripsToSave.add(TripEntity.builder()
+                            .route(route)
+                            .bus(busEvening)
+                            .departureTime(tripDate.atTime(19, 30))
+                            .arrivalTime(tripDate.atTime(19, 30).plusHours(durationHours))
+                            .basePrice(busEvening.getBusType().contains("Limousine") ? baseFare.add(new BigDecimal("100000.00")) : baseFare.add(new BigDecimal("30000.00")))
                             .status(TripStatus.SCHEDULED)
                             .build());
                 }
             }
 
             tripRepository.saveAll(tripsToSave);
-            log.info("Đã khởi tạo {} chuyến xe lịch trình phong phú", tripsToSave.size());
+            log.info("Đã khởi tạo thành công {} chuyến xe phong phú trải đều cả xe Thường và Limousine VIP trong 30 ngày", tripsToSave.size());
         }
 
         // 8. Vé mẫu (Tickets) phục vụ thống kê thực tế cho Admin Dashboard
@@ -250,9 +333,9 @@ public class DataInitializer implements CommandLineRunner {
                         .trip(trip1)
                         .seat(trip1Seats.get(0))
                         .user(customerUser)
-                        .customerName("Nguyễn Văn Khách")
+                        .customerName("Nguyễn Trung Kiên")
                         .customerPhone("0987654321")
-                        .customerEmail("customer@gmail.com")
+                        .customerEmail("kientrungnguyen@gmail.com")
                         .ticketCode("TK-SAMPLE-01")
                         .price(trip1.getBasePrice())
                         .status(TicketStatus.CONFIRMED)

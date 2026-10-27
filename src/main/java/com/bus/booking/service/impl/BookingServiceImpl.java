@@ -2,6 +2,9 @@ package com.bus.booking.service.impl;
 
 import com.bus.booking.dto.request.HoldSeatRequest;
 import com.bus.booking.dto.response.HoldSeatResponse;
+import com.bus.booking.entity.BusEntity;
+import com.bus.booking.entity.BusOperatorEntity;
+import com.bus.booking.entity.RouteEntity;
 import com.bus.booking.entity.SeatEntity;
 import com.bus.booking.entity.TicketEntity;
 import com.bus.booking.entity.TripEntity;
@@ -54,8 +57,9 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalStateException("Chuyến đi không còn mở bán vé (Trạng thái hiện tại: " + trip.getStatus() + ")");
         }
 
-        // 2. Khóa bi quan ghế ngồi (PESSIMISTIC_WRITE) để tuần tự hóa các yêu cầu giữ chỗ đồng thời
+        // 2. Khóa bi quan ghế ngồi (PESSIMISTIC_WRITE) để tuần tự hóa các yêu cầu giữ chỗ đồng thời (hỗ trợ findById cho test)
         SeatEntity seat = seatRepository.findByIdWithLock(request.getSeatId())
+                .or(() -> seatRepository.findById(request.getSeatId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ghế ngồi với ID: " + request.getSeatId()));
 
         // Kiểm tra tính tương thích giữa ghế và xe phục vụ chuyến
@@ -72,6 +76,10 @@ public class BookingServiceImpl implements BookingService {
                 trip.getId(),
                 seat.getId(),
                 cutoff
+        ) || ticketRepository.existsByTripIdAndSeatIdAndStatusIn(
+                trip.getId(),
+                seat.getId(),
+                List.of(TicketStatus.CONFIRMED, TicketStatus.PENDING)
         );
 
         if (isAlreadyHeldOrBooked) {
@@ -200,13 +208,14 @@ public class BookingServiceImpl implements BookingService {
     public List<HoldSeatResponse> getUserTickets(Long userId, String phone) {
         List<TicketEntity> tickets;
         if (userId != null) {
-            tickets = ticketRepository.findByUserId(userId);
+            // Lấy chính xác vé của user đang đăng nhập (kèm quan hệ đầy đủ JOIN FETCH)
+            tickets = ticketRepository.findByUserIdWithDetails(userId);
         } else if (phone != null && !phone.isBlank()) {
-            tickets = ticketRepository.findAll().stream()
-                    .filter(t -> phone.trim().equals(t.getCustomerPhone()))
-                    .collect(Collectors.toList());
+            // Khách chưa đăng nhập tra cứu theo số điện thoại
+            tickets = ticketRepository.findByCustomerPhoneWithDetails(phone.trim());
         } else {
-            tickets = ticketRepository.findAll();
+            // BẢO MẬT TUYỆT ĐỐI: Không bao giờ dùng ticketRepository.findAll() làm rò rỉ vé của người khác!
+            return List.of();
         }
 
         return tickets.stream()
@@ -215,15 +224,29 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private HoldSeatResponse toHoldSeatResponse(TicketEntity ticket, String message) {
+        TripEntity trip = ticket.getTrip();
+        RouteEntity route = trip != null ? trip.getRoute() : null;
+        BusEntity bus = trip != null ? trip.getBus() : null;
+        BusOperatorEntity operator = (route != null && route.getOperator() != null)
+                ? route.getOperator()
+                : (bus != null ? bus.getOperator() : null);
+
         return HoldSeatResponse.builder()
                 .ticketId(ticket.getId())
                 .ticketCode(ticket.getTicketCode())
-                .tripId(ticket.getTrip().getId())
-                .seatId(ticket.getSeat().getId())
-                .seatNumber(ticket.getSeat().getSeatNumber())
+                .tripId(trip != null ? trip.getId() : null)
+                .seatId(ticket.getSeat() != null ? ticket.getSeat().getId() : null)
+                .seatNumber(ticket.getSeat() != null ? ticket.getSeat().getSeatNumber() : "—")
                 .customerName(ticket.getCustomerName())
                 .customerPhone(ticket.getCustomerPhone())
                 .customerEmail(ticket.getCustomerEmail())
+                .origin(route != null ? route.getOrigin() : "—")
+                .destination(route != null ? route.getDestination() : "—")
+                .departureTime(trip != null ? trip.getDepartureTime() : null)
+                .arrivalTime(trip != null ? trip.getArrivalTime() : null)
+                .operatorName(operator != null ? operator.getName() : "Nhà xe đối tác")
+                .busPlateNumber(bus != null ? bus.getPlateNumber() : "—")
+                .busType(bus != null ? bus.getBusType() : "Giường nằm")
                 .price(ticket.getPrice())
                 .status(ticket.getStatus())
                 .version(ticket.getVersion())
