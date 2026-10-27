@@ -237,7 +237,14 @@ function logout() {
 // ============================================================
 // 5. NAVBAR RENDERER (Phong cách Traveloka/Vexere)
 // ============================================================
+let currentActiveNavPage = '';
+
 function renderNavbar(activePage = '') {
+  if (activePage) {
+    currentActiveNavPage = activePage;
+  } else {
+    activePage = currentActiveNavPage;
+  }
   const user = getCurrentUser();
   const role = user?.role || '';
   const isOp = role.includes('OPERATOR') || role.includes('ADMIN');
@@ -373,3 +380,107 @@ function statusBadge(status) {
     </span>
   `;
 }
+
+// ============================================================
+// 7. MULTI-TAB SESSION SYNCHRONIZATION (ĐỒNG BỘ TRẠNG THÁI ĐĂNG NHẬP ĐA TAB)
+// ============================================================
+/**
+ * Lắng nghe sự kiện thay đổi localStorage giữa các Tab (Cross-Tab Synchronization).
+ * Khi người dùng Đăng nhập, Đăng xuất hoặc Chuyển đổi tài khoản ở Tab khác:
+ * - Tự động cập nhật lại Header / Navbar mà không cần F5.
+ * - Kiểm tra phân quyền: Nếu tài khoản mới không có quyền truy cập trang quản trị hiện tại,
+ *   lập tức thông báo và chuyển hướng an toàn để bảo mật dữ liệu.
+ */
+window.addEventListener('storage', function(e) {
+  // Chỉ phản hồi khi khóa 'token' hoặc 'user' bị thay đổi trên trình duyệt
+  if (e.key !== 'token' && e.key !== 'user') return;
+
+  const currentPath = window.location.pathname.toLowerCase();
+  const isLoginPage = currentPath.endsWith('login.html');
+  const isOperatorPage = currentPath.endsWith('operator.html');
+  const isAdminPage = currentPath.endsWith('admin.html');
+  const isTicketsPage = currentPath.endsWith('my-tickets.html');
+  const isProtectedPage = isOperatorPage || isAdminPage || isTicketsPage;
+
+  const currentToken = localStorage.getItem('token');
+  const currentUser = getCurrentUser();
+
+  // TRƯỜNG HỢP 1: Người dùng đã bấm "Đăng xuất" từ một Tab khác
+  if (!currentToken || !currentUser) {
+    if (typeof showToast === 'function') {
+      showToast('Tài khoản đã đăng xuất từ một tab khác!', 'warning', 2500);
+    }
+
+    if (isProtectedPage) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'Phiên làm việc đã kết thúc',
+          text: 'Bạn đã đăng xuất ở một tab khác. Hệ thống đang chuyển hướng về trang đăng nhập...',
+          timer: 2000,
+          showConfirmButton: false,
+          allowOutsideClick: false
+        }).then(() => {
+          window.location.href = 'login.html';
+        });
+      } else {
+        setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+      }
+    } else {
+      // Trang công khai (index.html, trips.html): Cập nhật ngay Navbar về trạng thái Chưa đăng nhập
+      if (typeof renderNavbar === 'function') {
+        renderNavbar();
+      }
+    }
+    return;
+  }
+
+  // TRƯỜNG HỢP 2: Người dùng vừa Đăng nhập tài khoản mới từ Tab khác
+  if (isLoginPage) {
+    // Nếu đang ở trang login mà tab khác đã đăng nhập xong -> chuyển về trang chủ ngay
+    window.location.href = 'index.html';
+    return;
+  }
+
+  const role = currentUser.role || '';
+  const isAdmin = role === 'ROLE_ADMIN';
+  const isOperator = role === 'ROLE_OPERATOR' || isAdmin;
+
+  // Kiểm tra vi phạm phân quyền khi đổi tài khoản:
+  // Ví dụ: Đang mở operator.html nhưng tab kia đăng nhập tài khoản Khách hàng
+  if ((isAdminPage && !isAdmin) || (isOperatorPage && !isOperator)) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Quyền hạn đã thay đổi!',
+        text: `Bạn vừa chuyển sang tài khoản "${currentUser.fullName || currentUser.username}". Tài khoản này không có quyền truy cập trang quản trị này.`,
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Về trang chủ',
+        allowOutsideClick: false
+      }).then(() => {
+        window.location.href = 'index.html';
+      });
+    } else {
+      alert(`Tài khoản đổi sang ${currentUser.fullName || currentUser.username}. Đang chuyển hướng...`);
+      window.location.href = 'index.html';
+    }
+    return;
+  }
+
+  // Trường hợp tài khoản hợp lệ: Cập nhật giao diện Navbar ngay lập tức
+  if (typeof renderNavbar === 'function') {
+    renderNavbar();
+  }
+
+  if (typeof showToast === 'function') {
+    showToast(`Đồng bộ tài khoản thành công: ${currentUser.fullName || currentUser.username}`, 'info', 2500);
+  }
+
+  // Nếu đang ở trang Lịch sử vé hoặc trang Nhà xe, tải lại dữ liệu khớp với user mới
+  if (isTicketsPage && typeof loadMyTickets === 'function') {
+    loadMyTickets();
+  } else if (isOperatorPage && typeof initDashboard === 'function') {
+    initDashboard();
+  }
+});
+
