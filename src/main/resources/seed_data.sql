@@ -85,6 +85,28 @@ BEGIN
         updated_at = SYSDATETIME()
     WHERE username = 'customer';
 END;
+
+-- Thêm tài khoản Khách hàng mới độc lập: customer_new
+IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'customer_new')
+BEGIN
+    INSERT INTO users (role_id, operator_id, username, password, full_name, email, phone_number, status, created_at, updated_at)
+    VALUES (
+        @RoleIdCustomer,
+        NULL,
+        N'customer_new',
+        N'$2a$10$w85Vp28iM7b4k5L5.jCgK.J8wT4.D8G27DYiB54rV2c3p1Ym1j9u6', -- Customer@123
+        N'Nguyễn Trung Kiên (Mới)',
+        N'kientrungnguyen.new@gmail.com',
+        N'0989999888',
+        N'ACTIVE',
+        SYSDATETIME(),
+        SYSDATETIME()
+    );
+END;
+
+-- Dọn dẹp toàn bộ dữ liệu vé cũ của Customer Nguyễn Trung Kiên để giữ tài khoản sạch
+DELETE FROM payments WHERE ticket_id IN (SELECT id FROM tickets WHERE user_id IN (SELECT id FROM users WHERE username = 'customer'));
+DELETE FROM tickets WHERE user_id IN (SELECT id FROM users WHERE username = 'customer');
 GO
 
 -- 4. KHỞI TẠO TÀI KHOẢN ĐIỀU HÀNH CHO PHƯƠNG TRANG VÀ HOÀNG LONG

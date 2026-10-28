@@ -155,6 +155,31 @@ public class DataInitializer implements CommandLineRunner {
                 }
         );
 
+        // Khởi tạo thêm tài khoản khách hàng mới hoàn toàn sạch: customer_new
+        if (!userRepository.existsByUsername("customer_new")) {
+            userRepository.save(UserEntity.builder()
+                    .username("customer_new")
+                    .password(passwordEncoder.encode("Customer@123"))
+                    .fullName("Nguyễn Trung Kiên (Mới)")
+                    .email("kientrungnguyen.new@gmail.com")
+                    .phoneNumber("0989999888")
+                    .role(roleCustomer)
+                    .status(UserStatus.ACTIVE)
+                    .build());
+            log.info("Đã tạo thêm tài khoản CUSTOMER mới: customer_new / Customer@123 (Nguyễn Trung Kiên Mới)");
+        }
+
+        // Dọn dẹp triệt để bất kỳ vé mẫu nào vô tình bị gán vào tài khoản customer để giữ lịch sử đặt vé luôn sạch sẽ
+        userRepository.findByUsername("customer").ifPresent(cUser -> {
+            List<TicketEntity> userTickets = ticketRepository.findByUserId(cUser.getId());
+            for (TicketEntity t : userTickets) {
+                if (t.getTicketCode() != null && t.getTicketCode().startsWith("TK-SAMPLE")) {
+                    ticketRepository.delete(t);
+                    log.info("Đã xóa vé mẫu {} khỏi tài khoản customer", t.getTicketCode());
+                }
+            }
+        });
+
         // 5. Tuyến đường (Routes) - Phủ khắp cho cả Phương Trang và Hoàng Long
         if (routeRepository.count() == 0) {
             // Tuyến của Phương Trang
@@ -319,12 +344,11 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Đã khởi tạo thành công {} chuyến xe phong phú trải đều cả xe Thường và Limousine VIP trong 30 ngày", tripsToSave.size());
         }
 
-        // 8. Vé mẫu (Tickets) phục vụ thống kê thực tế cho Admin Dashboard
+        // 8. Vé mẫu (Tickets) phục vụ thống kê thực tế cho Admin Dashboard (Để user = null để không làm bẩn danh sách vé của khách hàng)
         if (ticketRepository.count() == 0 && tripRepository.count() > 0) {
             List<TripEntity> trips = tripRepository.findAll();
             TripEntity trip1 = trips.get(0);
             TripEntity trip2 = trips.size() > 1 ? trips.get(1) : trip1;
-            UserEntity customerUser = userRepository.findByUsername("customer").orElse(null);
             List<SeatEntity> trip1Seats = seatRepository.findByBusIdOrderBySeatNumberAsc(trip1.getBus().getId());
             List<SeatEntity> trip2Seats = seatRepository.findByBusIdOrderBySeatNumberAsc(trip2.getBus().getId());
 
@@ -332,10 +356,10 @@ public class DataInitializer implements CommandLineRunner {
                 ticketRepository.save(TicketEntity.builder()
                         .trip(trip1)
                         .seat(trip1Seats.get(0))
-                        .user(customerUser)
-                        .customerName("Nguyễn Trung Kiên")
+                        .user(null) // Để null để tài khoản khách hàng hoàn toàn sạch
+                        .customerName("Khách Mẫu 1")
                         .customerPhone("0987654321")
-                        .customerEmail("kientrungnguyen@gmail.com")
+                        .customerEmail("khach1@example.com")
                         .ticketCode("TK-SAMPLE-01")
                         .price(trip1.getBasePrice())
                         .status(TicketStatus.CONFIRMED)
@@ -347,10 +371,10 @@ public class DataInitializer implements CommandLineRunner {
                 ticketRepository.save(TicketEntity.builder()
                         .trip(trip1)
                         .seat(trip1Seats.get(1))
-                        .user(customerUser)
-                        .customerName("Trần Minh Tú")
+                        .user(null) // Để null
+                        .customerName("Khách Mẫu 2")
                         .customerPhone("0912345678")
-                        .customerEmail("tu@gmail.com")
+                        .customerEmail("khach2@example.com")
                         .ticketCode("TK-SAMPLE-02")
                         .price(trip1.getBasePrice())
                         .status(TicketStatus.CONFIRMED)
@@ -362,16 +386,17 @@ public class DataInitializer implements CommandLineRunner {
                 ticketRepository.save(TicketEntity.builder()
                         .trip(trip2)
                         .seat(trip2Seats.get(0))
+                        .user(null) // Để null
                         .customerName("Khách Vãng Lai")
                         .customerPhone("0909998877")
-                        .customerEmail("vanglai@gmail.com")
+                        .customerEmail("vanglai@example.com")
                         .ticketCode("TK-SAMPLE-03")
                         .price(trip2.getBasePrice())
                         .status(TicketStatus.CANCELLED)
                         .bookingTime(LocalDateTime.now().minusDays(2))
                         .build());
             }
-            log.info("Đã khởi tạo vé mẫu cho hệ thống");
+            log.info("Đã khởi tạo vé mẫu thống kê cho hệ thống (Không gán vào tài khoản khách hàng cá nhân)");
         }
 
         log.info("--- DataInitializer hoàn tất thành công! ---");
