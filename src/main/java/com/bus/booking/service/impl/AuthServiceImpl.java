@@ -80,11 +80,17 @@ public class AuthServiceImpl implements AuthService {
                 request.getUsername(), request.getEmail());
 
         if (userRepository.existsByUsername(request.getUsername().trim())) {
-            throw new IllegalArgumentException("Tên đăng nhập '" + request.getUsername() + "' đã được sử dụng!");
+            throw new IllegalArgumentException("Tên đăng nhập '" + request.getUsername().trim() + "' đã được sử dụng!");
         }
 
         if (userRepository.existsByEmail(request.getEmail().trim())) {
-            throw new IllegalArgumentException("Email '" + request.getEmail() + "' đã được đăng ký tài khoản!");
+            throw new IllegalArgumentException("Email '" + request.getEmail().trim() + "' đã được đăng ký tài khoản!");
+        }
+
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber().trim())) {
+                throw new IllegalArgumentException("Số điện thoại '" + request.getPhoneNumber().trim() + "' đã được đăng ký bởi tài khoản khác!");
+            }
         }
 
         // Mặc định vai trò là ROLE_CUSTOMER nếu không chỉ định

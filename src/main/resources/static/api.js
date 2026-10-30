@@ -293,15 +293,21 @@ function renderNavbar(activePage = '') {
           <!-- Auth Actions -->
           <div class="flex items-center gap-3">
             ${user ? `
-              <div class="flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-1.5 sm:px-3.5 sm:py-2">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-xs">
+              <div class="flex items-center gap-2 sm:gap-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-xs">
+                <div onclick="openProfileModal()" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-xs cursor-pointer hover:scale-105 hover:ring-2 hover:ring-blue-400 transition" title="Xem & chỉnh sửa hồ sơ">
                   ${(user.fullName || user.username || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div class="hidden sm:block text-left">
-                  <div class="text-xs font-bold text-slate-800 leading-tight">${user.fullName || user.username}</div>
+                <div onclick="openProfileModal()" class="hidden sm:block text-left cursor-pointer group" title="Bấm để chỉnh sửa thông tin cá nhân">
+                  <div class="text-xs font-bold text-slate-800 leading-tight group-hover:text-blue-600 transition flex items-center gap-1.5">
+                    <span>${user.fullName || user.username}</span>
+                    <i class="fa-solid fa-pen-to-square text-[10px] text-slate-400 group-hover:text-blue-600"></i>
+                  </div>
                   <div class="text-[10px] font-semibold text-blue-600">${user.role === 'ROLE_ADMIN' ? '👑 Quản Trị Viên' : user.role === 'ROLE_OPERATOR' ? '🚌 Quản Lý Nhà Xe' : '👤 Khách Hàng'}</div>
                 </div>
-                <button onclick="logout()" title="Đăng xuất" class="ml-1 text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition">
+                <button onclick="openProfileModal()" title="Chỉnh sửa thông tin cá nhân" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition">
+                  <i class="fa-solid fa-user-gear text-xs"></i>
+                </button>
+                <button onclick="logout()" title="Đăng xuất" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition">
                   <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
                 </button>
               </div>
@@ -483,4 +489,259 @@ window.addEventListener('storage', function(e) {
     initDashboard();
   }
 });
+
+// ============================================================
+// 8. USER PROFILE MODAL & MANAGEMENT (XEM & CHỈNH SỬA THÔNG TIN CÁ NHÂN)
+// ============================================================
+function ensureProfileModalInDOM() {
+  if (document.getElementById('user-profile-modal')) return;
+
+  const modalHtml = `
+    <div id="user-profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden transform transition-all duration-300">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 p-6 text-white flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-lg shadow-xs">
+              <i class="fa-solid fa-user-gear"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-extrabold leading-tight">Hồ Sơ Cá Nhân</h3>
+              <p class="text-xs text-blue-100 font-medium">Xem và cập nhật thông tin tài khoản của bạn</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeProfileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Form -->
+        <form id="profile-edit-form" onsubmit="submitProfileUpdate(event)" class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tên đăng nhập</label>
+              <input id="prof-username" type="text" disabled class="w-full bg-slate-100 text-slate-500 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 cursor-not-allowed" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Vai trò</label>
+              <input id="prof-role" type="text" disabled class="w-full bg-slate-100 text-blue-700 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 cursor-not-allowed" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <input id="prof-fullname" type="text" required placeholder="Nhập họ và tên đầy đủ"
+                class="w-full h-11 pl-10 pr-4 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <i class="fa-regular fa-user text-xs"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Email <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <input id="prof-email" type="email" required placeholder="name@domain.com"
+                  class="w-full h-11 pl-10 pr-4 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <i class="fa-regular fa-envelope text-xs"></i>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Số điện thoại <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <input id="prof-phone" type="tel" required placeholder="0901234567"
+                  class="w-full h-11 pl-10 pr-4 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <i class="fa-solid fa-phone text-xs"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100">
+            <label class="block text-xs font-bold text-slate-700 mb-1">
+              Đổi mật khẩu mới <span class="text-[11px] font-normal text-slate-400">(Để trống nếu muốn giữ nguyên mật khẩu cũ)</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="relative">
+                <input id="prof-password" type="password" placeholder="Mật khẩu mới (>= 6 ký tự)"
+                  class="w-full h-11 pl-9 pr-8 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <i class="fa-solid fa-lock text-xs"></i>
+                </div>
+                <button type="button" onclick="togglePasswordVisibility('prof-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <i class="fa-regular fa-eye text-xs"></i>
+                </button>
+              </div>
+              <div class="relative">
+                <input id="prof-password-confirm" type="password" placeholder="Xác nhận mật khẩu mới"
+                  class="w-full h-11 pl-9 pr-8 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <i class="fa-solid fa-shield-halved text-xs"></i>
+                </div>
+                <button type="button" onclick="togglePasswordVisibility('prof-password-confirm', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <i class="fa-regular fa-eye text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <button type="button" onclick="closeProfileModal()"
+              class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+              Hủy bỏ
+            </button>
+            <button type="submit" id="btn-save-profile"
+              class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:shadow-lg transition flex items-center gap-2">
+              <i class="fa-solid fa-floppy-disk text-xs"></i>
+              <span>Lưu thay đổi</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function openProfileModal() {
+  if (!isLoggedIn()) {
+    showToast('Vui lòng đăng nhập để xem thông tin cá nhân!', 'warning');
+    setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+    return;
+  }
+
+  ensureProfileModalInDOM();
+  const user = getCurrentUser() || {};
+
+  document.getElementById('prof-username').value = user.username || '—';
+  document.getElementById('prof-role').value     = user.role === 'ROLE_ADMIN' ? '👑 Quản Trị Viên' : user.role === 'ROLE_OPERATOR' ? '🚌 Quản Lý Nhà Xe' : '👤 Khách Hàng';
+  document.getElementById('prof-fullname').value = user.fullName || '';
+  document.getElementById('prof-email').value    = user.email || '';
+  document.getElementById('prof-phone').value    = user.phone || user.phoneNumber || '';
+  document.getElementById('prof-password').value = '';
+  document.getElementById('prof-password-confirm').value = '';
+
+  const modal = document.getElementById('user-profile-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Lấy dữ liệu mới nhất từ máy chủ để hiển thị thông tin cập nhật
+  try {
+    const profile = await fetchAPI('/users/profile');
+    if (profile) {
+      if (profile.fullName) document.getElementById('prof-fullname').value = profile.fullName;
+      if (profile.email) document.getElementById('prof-email').value = profile.email;
+      if (profile.phone || profile.phoneNumber) document.getElementById('prof-phone').value = profile.phone || profile.phoneNumber;
+    }
+  } catch {
+    // Nếu có lỗi mạng thì vẫn giữ dữ liệu từ localStorage
+  }
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('user-profile-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  if (btn) {
+    btn.innerHTML = isPass ? '<i class="fa-regular fa-eye-slash text-xs"></i>' : '<i class="fa-regular fa-eye text-xs"></i>';
+  }
+}
+
+async function submitProfileUpdate(event) {
+  event.preventDefault();
+  const fullName = document.getElementById('prof-fullname').value.trim();
+  const email    = document.getElementById('prof-email').value.trim();
+  const phone    = document.getElementById('prof-phone').value.trim();
+  const password = document.getElementById('prof-password').value;
+  const confirm  = document.getElementById('prof-password-confirm').value;
+
+  if (!fullName) {
+    showToast('Họ và tên không được để trống!', 'warning');
+    return;
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Vui lòng nhập email đúng định dạng!', 'warning');
+    return;
+  }
+  if (!phone || !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone)) {
+    showToast('Số điện thoại không hợp lệ (cần 10 số, bắt đầu bằng 03, 05, 07, 08, 09)!', 'warning');
+    return;
+  }
+  if (password) {
+    if (password.length < 6) {
+      showToast('Mật khẩu mới phải có ít nhất 6 ký tự!', 'warning');
+      return;
+    }
+    if (password !== confirm) {
+      showToast('Mật khẩu xác nhận không khớp với mật khẩu mới!', 'warning');
+      return;
+    }
+  }
+
+  const btn = document.getElementById('btn-save-profile');
+  await withButtonLoading(btn, async () => {
+    try {
+      const payload = {
+        fullName: fullName,
+        email: email,
+        phoneNumber: phone,
+        phone: phone,
+      };
+      if (password) {
+        payload.password = password;
+      }
+
+      const res = await fetchAPI('/users/profile', 'PUT', payload);
+
+      if (res && (res.accessToken || res.token)) {
+        localStorage.setItem('token', res.accessToken || res.token);
+      }
+
+      const prevUser = getCurrentUser() || {};
+      const updatedUser = {
+        ...prevUser,
+        userId:       res?.userId || prevUser.userId,
+        username:     res?.username || prevUser.username,
+        fullName:     res?.fullName || fullName,
+        email:        res?.email || email,
+        phone:        res?.phone || res?.phoneNumber || phone,
+        phoneNumber:  res?.phone || res?.phoneNumber || phone,
+        role:         res?.role || prevUser.role,
+        operatorId:   res?.operatorId ?? prevUser.operatorId,
+        operatorName: res?.operatorName || prevUser.operatorName,
+        operatorCode: res?.operatorCode || prevUser.operatorCode
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      if (typeof renderNavbar === 'function') {
+        renderNavbar();
+      }
+
+      closeProfileModal();
+      showSuccessModal(
+        'Cập nhật thành công! 🎉',
+        'Thông tin tài khoản của bạn đã được cập nhật an toàn trên hệ thống.'
+      );
+
+    } catch (err) {
+      // Toast hoặc modal lỗi đã được hiển thị bởi fetchAPI
+    }
+  }, 'Đang lưu...');
+}
+
 

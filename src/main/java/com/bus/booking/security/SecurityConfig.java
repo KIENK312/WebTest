@@ -113,7 +113,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tickets/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/tickets/cancel/**").permitAll()
 
-                        // Role CUSTOMER / Authenticated for tickets & payments
+                        // Role CUSTOMER / Authenticated for tickets, users & payments
+                        .requestMatchers("/api/v1/users/**").authenticated()
                         .requestMatchers("/api/v1/tickets/**").hasAnyRole("CUSTOMER", "OPERATOR", "ADMIN")
                         .requestMatchers("/api/v1/payments/**").hasAnyRole("CUSTOMER", "OPERATOR", "ADMIN")
 

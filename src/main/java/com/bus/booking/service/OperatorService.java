@@ -49,6 +49,12 @@ public interface OperatorService {
     List<com.bus.booking.dto.response.PartnerDto> getPartnersForCurrentScope();
 
     /**
+     * Lấy danh sách vé, số ghế ngồi và chuyến xe thuộc phạm vi quản lý của nhà xe.
+     * Tự động lọc nghiêm ngặt theo tài khoản nhà xe đang đăng nhập (hoặc theo bộ lọc nếu là Admin).
+     */
+    List<com.bus.booking.dto.response.HoldSeatResponse> getOperatorTickets(Long operatorId, Long tripId, String status);
+
+    /**
      * Xử lý giải quyết operatorId an toàn theo phân quyền người dùng.
      */
     Long resolveOperatorId(Long operatorId);

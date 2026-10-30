@@ -222,6 +222,60 @@ public class OperatorServiceImpl implements OperatorService {
         return null;
     }
 
+    /**
+     * Lấy danh sách vé và số ghế đã đặt thuộc nhà xe đối tác (hoặc tất cả nếu là Admin).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.bus.booking.dto.response.HoldSeatResponse> getOperatorTickets(Long operatorId, Long tripId, String status) {
+        Long resolvedId = resolveOperatorId(operatorId);
+        com.bus.booking.enums.TicketStatus ticketStatus = null;
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+            try {
+                ticketStatus = com.bus.booking.enums.TicketStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        List<com.bus.booking.entity.TicketEntity> tickets =
+                ticketRepository.findTicketsByOperatorWithDetails(resolvedId, tripId, ticketStatus);
+
+        return tickets.stream()
+                .map(this::toHoldSeatResponse)
+                .collect(Collectors.toList());
+    }
+
+    private com.bus.booking.dto.response.HoldSeatResponse toHoldSeatResponse(com.bus.booking.entity.TicketEntity t) {
+        if (t == null) return null;
+        TripEntity trip = t.getTrip();
+        RouteEntity route = trip != null ? trip.getRoute() : null;
+        BusEntity bus = trip != null ? trip.getBus() : null;
+        BusOperatorEntity operator = (bus != null && bus.getOperator() != null)
+                ? bus.getOperator()
+                : (route != null ? route.getOperator() : null);
+
+        return com.bus.booking.dto.response.HoldSeatResponse.builder()
+                .ticketId(t.getId())
+                .ticketCode(t.getTicketCode())
+                .tripId(trip != null ? trip.getId() : null)
+                .seatId(t.getSeat() != null ? t.getSeat().getId() : null)
+                .seatNumber(t.getSeat() != null ? t.getSeat().getSeatNumber() : "—")
+                .customerName(t.getCustomerName())
+                .customerPhone(t.getCustomerPhone())
+                .customerEmail(t.getCustomerEmail())
+                .origin(route != null ? route.getOrigin() : "—")
+                .destination(route != null ? route.getDestination() : "—")
+                .departureTime(trip != null ? trip.getDepartureTime() : null)
+                .arrivalTime(trip != null ? trip.getArrivalTime() : null)
+                .operatorName(operator != null ? operator.getName() : "—")
+                .busPlateNumber(bus != null ? bus.getPlateNumber() : "—")
+                .busType(bus != null ? bus.getBusType() : "—")
+                .price(t.getPrice())
+                .status(t.getStatus())
+                .version(t.getVersion())
+                .bookingTime(t.getBookingTime())
+                .build();
+    }
+
     private com.bus.booking.dto.response.PartnerDto toPartnerDto(BusOperatorEntity op) {
         if (op == null) return null;
         return com.bus.booking.dto.response.PartnerDto.builder()

@@ -98,5 +98,17 @@ public class OperatorController {
                 .body(ApiResponse.created("Tạo chuyến xe mới thành công", response));
     }
 
-
+    /**
+     * Lấy danh sách vé và số ghế đã đặt thuộc nhà xe đối tác (hoặc tất cả nếu là Admin).
+     * Cho phép lọc theo tripId và trạng thái vé (status).
+     */
+    @GetMapping("/tickets")
+    public ResponseEntity<ApiResponse<List<com.bus.booking.dto.response.HoldSeatResponse>>> getOperatorTickets(
+            @RequestParam(value = "operatorId", required = false) Long operatorId,
+            @RequestParam(value = "tripId", required = false) Long tripId,
+            @RequestParam(value = "status", required = false) String status) {
+        List<com.bus.booking.dto.response.HoldSeatResponse> tickets =
+                operatorService.getOperatorTickets(operatorId, tripId, status);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vé đặt của nhà xe thành công", tickets));
+    }
 }
