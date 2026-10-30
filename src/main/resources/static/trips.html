@@ -32,7 +32,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
 
-  <!-- Navbar -->
+  <!-- Navbar dùng chung qua api.js -->
   <div id="navbar"></div>
 
   <!-- Search Summary Header Bar (Traveloka Style) -->
@@ -147,7 +147,7 @@
           <!-- 3. Nhà xe đối tác -->
           <div class="mb-6">
             <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2.5">Nhà xe</label>
-            <div id="operator-filter-list" class="space-y-2 text-xs font-semibold text-slate-600">
+            <div id="operator-filter-list" class="space-y-2 text-xs font-semibold text-slate-600 max-h-48 overflow-y-auto pr-1">
               <!-- Render động theo danh sách đối tác -->
             </div>
           </div>
@@ -192,7 +192,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <div class="text-xs font-black text-slate-900 truncate">Tất cả hãng xe</div>
-                <div class="text-[11px] font-semibold text-slate-500" id="count-op-ALL">Đang tải...</div>
+                <div class="text-[11px] font-semibold text-slate-500" id="count-op-ALL">Đang nạp...</div>
               </div>
             </button>
 
@@ -235,7 +235,7 @@
         </div>
 
         <!-- Container danh sách thẻ chuyến xe -->
-        <div id="trips-container" class="space-y-4">
+        <div id="trips-container" class="space-y-4 min-h-[300px]">
           <!-- Skeleton Loading -->
           <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs animate-pulse space-y-4">
             <div class="h-6 bg-slate-200 rounded-xl w-1/3"></div>
@@ -244,16 +244,16 @@
           </div>
         </div>
 
-        <!-- TỐI ƯU HIỆU NĂNG: Thanh điều khiển phân trang & tải theo lô (Load More) -->
-        <div id="load-more-container" class="pt-4 pb-8 hidden">
+        <!-- TỐI ƯU HIỆU NĂNG: Thanh điều khiển phân trang & tải theo lô (Chunked Batch / Load More) -->
+        <div id="load-more-container" class="pt-4 pb-4 hidden">
           <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
             <div>
               <div id="load-more-status" class="text-xs font-bold text-slate-800">
-                Đang hiển thị <span class="text-blue-600 font-black text-sm" id="count-shown">10</span> / <span class="text-slate-900 font-black text-sm" id="count-total">527</span> chuyến xe
+                Đang hiển thị <span class="text-blue-600 font-black text-sm" id="count-shown">10</span> / <span class="text-slate-900 font-black text-sm" id="count-total">50</span> chuyến xe
               </div>
-              <p class="text-[11px] text-slate-400 mt-0.5">Tải từng lô 10 chuyến xe giúp duyệt mượt mà, không giật lag DOM</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Tải từng lô 10 chuyến xe giúp duyệt siêu mượt 60 FPS, không giật lag DOM</p>
             </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-center flex-wrap">
               <button onclick="loadMoreTrips()" id="btn-load-more"
                       class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
                 <span>Xem thêm 10 chuyến tiếp theo</span>
@@ -266,6 +266,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Sentinel theo dõi cuộn tự động (Infinite Scroll qua IntersectionObserver) -->
+        <div id="scroll-sentinel" class="h-6 w-full pointer-events-none opacity-0"></div>
 
       </section>
 
@@ -280,13 +283,89 @@
   <!-- Scripts -->
   <script src="api.js"></script>
   <script>
-    let allTrips = [];
-    let currentOrigin = '';
-    let currentDest = '';
-    let currentDate = '';
-    let currentOpTab = 'ALL';
+    // ============================================================
+    // BIẾN TRẠNG THÁI TOÀN CỤC
+    // ============================================================
+    let allTrips             = [];
+    let currentFilteredTrips = [];
+    let displayedCount       = 0;
+    const BATCH_SIZE         = 10; // Giới hạn chỉ render 10 chuyến xe/lần
 
-    // Helper kiểm tra hãng xe
+    let currentOrigin = '';
+    let currentDest   = '';
+    let currentDate   = '';
+    let currentOpTab  = 'ALL';
+
+    // ============================================================
+    // TIÊU CHUẨN 4: CLIENT-SIDE CACHING BẰNG sessionStorage (TTL 5 PHÚT)
+    // Giúp nạp dữ liệu tức thì trong 0ms khi quay lại hoặc chuyển tab/ngày
+    // ============================================================
+    const CACHE_PREFIX = 'busticket_trips_cache_';
+    const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
+
+    function buildCacheKey(origin, dest, date) {
+      return `${CACHE_PREFIX}${(origin || 'ALL').trim()}_${(dest || 'ALL').trim()}_${(date || 'ALL').trim()}`;
+    }
+
+    function getCachedData(key) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const entry = JSON.parse(raw);
+        if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+          sessionStorage.removeItem(key);
+          return null;
+        }
+        return entry.data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setCachedData(key, data) {
+      try {
+        sessionStorage.setItem(key, JSON.stringify({
+          timestamp: Date.now(),
+          data: data
+        }));
+      } catch (err) {
+        // Nếu bộ nhớ sessionStorage bị đầy, dọn dẹp các cache cũ
+        clearExpiredTripsCache();
+      }
+    }
+
+    function clearExpiredTripsCache() {
+      try {
+        const keys = Object.keys(sessionStorage);
+        for (const k of keys) {
+          if (k.startsWith(CACHE_PREFIX)) {
+            sessionStorage.removeItem(k);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // ============================================================
+    // TIÊU CHUẨN 3: KỸ THUẬT DEBOUNCE (CHỐNG GIẬT LAG KHI LỌC/GÕ PHÍM)
+    // Trì hoãn 300ms sau khi người dùng dừng thao tác rồi mới tính toán lại
+    // ============================================================
+    function debounce(func, wait = 300) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          func.apply(this, args);
+        }, wait);
+      };
+    }
+
+    const debouncedFilter = debounce(() => {
+      filterAndRenderTrips();
+    }, 300);
+
+    // ============================================================
+    // HELPER XÁC ĐỊNH HÃNG XE ĐỐI TÁC
+    // ============================================================
     function isFutaTrip(t) {
       const code = (t.operatorCode || '').toUpperCase();
       const name = (t.operatorName || '').toLowerCase();
@@ -299,31 +378,25 @@
       return code.includes('HOANGLONG') || code.includes('HL') || name.includes('hoàng long');
     }
 
-    // Khởi tạo trang
+    // ============================================================
+    // KHỞI TẠO TRANG
+    // ============================================================
     (async function init() {
       renderNavbar('trips');
 
-      // Lấy tham số từ URL
+      // Đọc tham số tìm kiếm từ URL
       const urlParams = new URLSearchParams(window.location.search);
       const paramOrigin = urlParams.get('departurePoint');
       const paramDest   = urlParams.get('arrivalPoint');
       const paramDate   = urlParams.get('departureDate');
 
-      if (paramOrigin && paramOrigin.trim() !== '') {
-        currentOrigin = paramOrigin.trim();
-        currentDest   = (paramDest || '').trim();
-        currentDate   = paramDate || '';
-      } else {
-        currentOrigin = '';
-        currentDest   = '';
-        currentDate   = '';
-      }
+      currentOrigin = (paramOrigin && paramOrigin.trim() !== '') ? paramOrigin.trim() : '';
+      currentDest   = (paramDest && paramDest.trim() !== '') ? paramDest.trim() : '';
+      currentDate   = paramDate || '';
 
-      // Update UI Header
       updateHeaderSummary();
-
-      // Tải danh sách chuyến
       await loadTrips();
+      setupInfiniteScroll();
     })();
 
     function updateHeaderSummary() {
@@ -376,7 +449,6 @@
       loadTrips();
     }
 
-    // Cập nhật số lượng chuyến theo từng tab hãng xe
     function updateOperatorBrandCounters() {
       const total = allTrips.length;
       const futaCount = allTrips.filter(t => isFutaTrip(t)).length;
@@ -391,11 +463,9 @@
       if (cHl)   cHl.textContent   = `${hlCount} chuyến mở bán`;
     }
 
-    // Chọn Tab hãng xe
     function selectOperatorTab(tab) {
       currentOpTab = tab;
 
-      // Reset style các button tab
       document.querySelectorAll('.op-tab-btn').forEach(btn => {
         btn.classList.remove(
           'border-blue-600', 'bg-blue-50/70',
@@ -420,10 +490,26 @@
       filterAndRenderTrips();
     }
 
-    // Gọi API tìm chuyến xe
-    // GET /api/v1/trips/search?departurePoint=...&arrivalPoint=...&departureDate=...
-    async function loadTrips() {
+    // ============================================================
+    // TẢI CHUYẾN XE (KẾT HỢP SESSION STORAGE CACHE & REST API)
+    // ============================================================
+    async function loadTrips(useCache = true) {
       const container = document.getElementById('trips-container');
+      const cacheKey = buildCacheKey(currentOrigin, currentDest, currentDate);
+
+      // Bước 1: Kiểm tra Cache trong sessionStorage
+      if (useCache) {
+        const cached = getCachedData(cacheKey);
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          allTrips = cached;
+          updateOperatorBrandCounters();
+          populateOperatorFilters();
+          filterAndRenderTrips();
+          return;
+        }
+      }
+
+      // Bước 2: Hiển thị Skeleton Loading trong lúc chờ mạng
       container.innerHTML = `
         <div class="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-xs">
           <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -440,6 +526,10 @@
         const data = await fetchAPI('/trips/search', 'GET', null, queryParams);
 
         allTrips = Array.isArray(data) ? data : [];
+        
+        // Lưu kết quả vào sessionStorage
+        setCachedData(cacheKey, allTrips);
+
         updateOperatorBrandCounters();
         populateOperatorFilters();
         filterAndRenderTrips();
@@ -452,8 +542,8 @@
             </div>
             <h3 class="text-base font-extrabold text-slate-800 mb-1">Không thể tải chuyến xe</h3>
             <p class="text-xs text-slate-500 mb-5">Đã xảy ra lỗi kết nối tới máy chủ. Vui lòng kiểm tra lại!</p>
-            <button onclick="loadTrips()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition">
-              <i class="fa-solid fa-rotate-right mr-1.5"></i> Thử lại
+            <button onclick="loadTrips(false)" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition">
+              <i class="fa-solid fa-rotate-right mr-1.5"></i> Thử lại (Không dùng cache)
             </button>
           </div>
         `;
@@ -467,6 +557,8 @@
         list.innerHTML = '<span class="text-xs text-slate-400">Không có đối tác</span>';
         return;
       }
+      
+      // Ghép chuỗi mảng 1 lần duy nhất, tránh innerHTML +=
       list.innerHTML = operators.map(op => `
         <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
           <input type="checkbox" name="op-filter" value="${op}" onchange="debouncedFilter()" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4" />
@@ -476,39 +568,14 @@
     }
 
     // ============================================================
-    // TỐI ƯU HIỆU NĂNG 1: KỸ THUẬT DEBOUNCE (CHỐNG NGHẼN MAIN THREAD)
-    // - Trì hoãn thực thi 300ms sau khi người dùng dừng thao tác (click checkbox, đổi sắp xếp).
-    // - Tránh kích hoạt hàm lọc và render lại hàng chục lần liên tiếp khi user bấm nhanh.
+    // BỘ LỌC VÀ TÍNH TOÁN DỮ LIỆU CHUYẾN XE (RAM MEMORY FILTERING)
     // ============================================================
-    function debounce(func, wait = 300) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
-    }
-
-    const debouncedFilter = debounce(() => {
-      filterAndRenderTrips();
-    }, 300);
-
-    // ============================================================
-    // CẤU HÌNH PHÂN ĐOẠN HIỂN THỊ (CHUNKED BATCH RENDERING & LOAD MORE)
-    // - BATCH_SIZE = 10: Chỉ render 10 chuyến mỗi lần vào DOM (~350 DOM elements).
-    // - Giải quyết triệt để giật lag: Không đưa toàn bộ 500+ chuyến (~18,000 DOM elements)
-    //   vào cây DOM cùng một lúc, giúp cuộn trang siêu mượt 60 FPS.
-    // ============================================================
-    const BATCH_SIZE = 10;
-    let currentFilteredTrips = [];
-    let displayedCount = 0;
-
     function filterAndRenderTrips() {
       const sort = document.getElementById('filter-sort').value;
       const checkedTimes = Array.from(document.querySelectorAll('input[name="time-filter"]:checked')).map(cb => cb.value);
       const checkedOps   = Array.from(document.querySelectorAll('input[name="op-filter"]:checked')).map(cb => cb.value);
       const checkedTypes = Array.from(document.querySelectorAll('input[name="bus-type"]:checked')).map(cb => cb.value);
 
-      // Thao tác mảng thuần trên RAM cực nhanh (<1ms cho 500+ phần tử)
       let filtered = [...allTrips];
 
       // 1. Lọc theo Top Brand Tabs (FUTA, HOANGLONG, ALL)
@@ -562,7 +629,6 @@
       selectOperatorTab('ALL');
     }
 
-    // Tiện ích tính thời gian di chuyển (giờ + phút)
     function calcDuration(dep, arr) {
       if (!dep || !arr) return 'Tuyến thẳng';
       const diffMs = new Date(arr) - new Date(dep);
@@ -575,9 +641,9 @@
     }
 
     // ============================================================
-    // TỐI ƯU HIỆU NĂNG 2: RENDER DOM 1 LẦN DUY NHẤT (CHỐNG REFLOW/REPAINT)
-    // - Tuyệt đối không dùng innerHTML += trong vòng lặp (gây drop frame nghiêm trọng).
-    // - Sử dụng Array.map() gom chuỗi HTML hoàn chỉnh rồi gán đúng 1 lần vào container.innerHTML.
+    // TIÊU CHUẨN 1 & 2: TỐI ƯU HÓA DOM RENDERING & PHÂN LÔ LOAD MORE
+    // - TUYỆT ĐỐI KHÔNG dùng innerHTML += trong vòng lặp!
+    // - Gom chuỗi bằng Array.map().join('') rồi gán duy nhất 1 lần vào innerHTML.
     // - Chỉ đưa lô đầu tiên (10 chuyến) vào hiển thị ban đầu.
     // ============================================================
     function renderTripCards(trips) {
@@ -612,7 +678,7 @@
         return;
       }
 
-      // Lấy 10 chuyến xe đầu tiên
+      // Lấy 10 chuyến xe đầu tiên (BATCH_SIZE)
       const firstBatch = trips.slice(0, BATCH_SIZE);
       displayedCount = firstBatch.length;
 
@@ -625,9 +691,8 @@
     }
 
     // ============================================================
-    // TỐI ƯU HIỆU NĂNG 3: NỐI THÊM BẰNG insertAdjacentHTML
-    // - Không làm render lại (re-render) các thẻ đã có trước đó.
-    // - Chỉ đính nối 10 phần tử mới vào cuối container với chi phí CPU gần như bằng 0.
+    // NỐI THÊM 10 CHUYẾN BẰNG insertAdjacentHTML('beforeend')
+    // Không làm re-render lại các thẻ DOM đã có trước đó!
     // ============================================================
     function loadMoreTrips(batchSize = BATCH_SIZE) {
       if (displayedCount >= currentFilteredTrips.length) return;
@@ -640,7 +705,7 @@
       // Gom chuỗi các card tiếp theo
       const nextHtml = nextBatch.map(trip => renderSingleTripCard(trip)).join('');
 
-      // insertAdjacentHTML('beforeend') nối trực tiếp vào DOM mà không kích hoạt layout thrashing
+      // insertAdjacentHTML nối trực tiếp vào cuối container mà không phá hủy DOM cũ
       container.insertAdjacentHTML('beforeend', nextHtml);
       displayedCount += nextBatch.length;
 
@@ -675,7 +740,25 @@
     }
 
     // ============================================================
-    // HÀM TẠO HTML CARD ĐƠN LẺ (KÈM loading="lazy" & decoding="async" NẾU CÓ ẢNH)
+    // TỰ ĐỘNG TẢI KHI CUỘN GẦN CUỐI TRANG (INTERSECTION OBSERVER)
+    // ============================================================
+    let infiniteScrollObserver = null;
+    function setupInfiniteScroll() {
+      if (infiniteScrollObserver) infiniteScrollObserver.disconnect();
+      const sentinel = document.getElementById('scroll-sentinel');
+      if (!sentinel) return;
+
+      infiniteScrollObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && displayedCount < currentFilteredTrips.length) {
+          loadMoreTrips();
+        }
+      }, { rootMargin: '250px' });
+
+      infiniteScrollObserver.observe(sentinel);
+    }
+
+    // ============================================================
+    // TẠO HTML CHO TỪNG CARD CHUYẾN XE (KÈM loading="lazy" & decoding="async")
     // ============================================================
     function renderSingleTripCard(trip) {
       const depTime  = formatTime(trip.departureTime);
@@ -703,7 +786,7 @@
 
       if (isFuta) {
         brandLogoHtml = `
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 text-white flex flex-col items-center justify-center font-black shadow-md shadow-orange-500/25">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 text-white flex flex-col items-center justify-center font-black shadow-md shadow-orange-500/25 shrink-0">
             <span class="text-xs tracking-wider">FUTA</span>
             <span class="text-[8px] font-bold opacity-90 uppercase">Bus Lines</span>
           </div>
@@ -718,7 +801,7 @@
         brandTitleHtml = `<h4 class="font-black text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition-colors">Phương Trang <span class="text-xs font-bold text-orange-600">(FUTA Bus Lines)</span></h4>`;
       } else if (isHL) {
         brandLogoHtml = `
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-700 text-white flex flex-col items-center justify-center font-black shadow-md shadow-rose-500/25">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-700 text-white flex flex-col items-center justify-center font-black shadow-md shadow-rose-500/25 shrink-0">
             <span class="text-xs tracking-wider">HL</span>
             <span class="text-[8px] font-bold opacity-90 uppercase">Hoàng Long</span>
           </div>
@@ -733,7 +816,7 @@
         brandTitleHtml = `<h4 class="font-black text-slate-900 text-sm sm:text-base group-hover:text-rose-600 transition-colors">Hoàng Long <span class="text-xs font-bold text-rose-600">(Hoàng Long Bus Lines)</span></h4>`;
       } else {
         brandLogoHtml = `
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-500/20">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-500/20 shrink-0">
             ${opCode}
           </div>
         `;
@@ -835,7 +918,7 @@
             </div>
 
             <!-- Giá vé và Nút chọn ghế -->
-            <div class="lg:w-52 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-row lg:flex-col items-center lg:items-end justify-between pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <div class="lg:w-52 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-row lg:flex-col items-center lg:end justify-between pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
               <div class="text-left lg:text-right">
                 <span class="text-[11px] text-slate-400 font-bold block">Giá vé chính thức</span>
                 <div class="text-2xl sm:text-3xl font-black ${isFuta ? 'text-orange-600' : isHL ? 'text-rose-600' : 'text-blue-600'} tracking-tight">${price}</div>
