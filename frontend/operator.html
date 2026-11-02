@@ -54,6 +54,7 @@
     <button onclick="switchMainTab('buses')"   id="mtab-buses"   class="mtab mtab-active px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🚌 Đội xe</button>
     <button onclick="switchMainTab('trips')"   id="mtab-trips"   class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🗓️ Chuyến xe</button>
     <button onclick="switchMainTab('tickets')" id="mtab-tickets" class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition flex items-center gap-1.5"><i class="fa-solid fa-ticket text-xs"></i> <span>Quản lý Vé & Ghế</span></button>
+    <button onclick="switchMainTab('lookup')"  id="mtab-lookup"  class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass text-xs"></i> <span>🔍 Tra cứu Khách hàng</span></button>
     <button onclick="switchMainTab('maintenance')" id="mtab-maintenance" class="mtab px-5 py-2.5 text-sm font-semibold rounded-t-xl border border-b-0 border-gray-200 transition">🔧 Bảo trì</button>
   </div>
 
@@ -174,6 +175,66 @@
     <!-- Danh sách vé -->
     <div id="operator-tickets-list" class="space-y-3">
       <div class="text-center py-10 text-gray-400">Đang tải danh sách vé...</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: TRA CỨU KHÁCH HÀNG & VÉ (SĐT / MÃ VÉ) ===== -->
+  <div id="tab-lookup" class="tab-content hidden">
+    <!-- Header -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <span class="text-blue-600"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+          <span>Tra cứu Thông tin Khách hàng & Vé đặt</span>
+        </h2>
+        <p class="text-xs text-gray-500 mt-0.5">Tìm kiếm siêu tốc theo Số điện thoại (vd: 0901234567), Mã số vé (vd: TK-...), hoặc Họ tên khách hàng</p>
+      </div>
+    </div>
+
+    <!-- Search Toolbar -->
+    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs mb-6">
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative flex-1 w-full">
+          <input id="lookup-input" type="text" oninput="debouncedLookup()" placeholder="Nhập Số điện thoại (10 số), Mã vé xe (vd: TK-...), hoặc Họ tên..."
+            class="w-full h-12 pl-11 pr-10 text-sm font-bold rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-inner bg-slate-50/50" />
+          <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-base">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <button type="button" onclick="clearLookupInput()" id="btn-clear-lookup" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+        <button type="button" onclick="executeLookup()"
+          class="w-full sm:w-auto h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2 shrink-0">
+          <i class="fa-solid fa-search"></i>
+          <span>Tra cứu</span>
+        </button>
+      </div>
+
+      <!-- Quick Tips -->
+      <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 text-xs text-gray-500 flex-wrap">
+        <span class="font-bold text-gray-400 text-[11px] uppercase tracking-wider">Gợi ý nhanh:</span>
+        <button type="button" onclick="quickFillLookup('0901234567')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-mono text-gray-700 font-semibold transition">
+          📞 0901234567
+        </button>
+        <button type="button" onclick="quickFillLookup('TK-')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-mono text-gray-700 font-semibold transition">
+          🎫 Mã vé TK-
+        </button>
+        <button type="button" onclick="quickFillLookup('Nguyễn Trung Kiên')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-gray-700 font-semibold transition">
+          👤 Nguyễn Trung Kiên
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Box -->
+    <div id="lookup-results-container" class="space-y-4">
+      <div class="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-200">
+        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-3 shadow-xs">
+          <i class="fa-solid fa-address-book"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-base">Sẵn sàng tra cứu hành khách</h3>
+        <p class="text-xs text-gray-400 mt-1 max-w-md mx-auto">Nhập số điện thoại của hành khách hoặc mã vé khi có khách cần kiểm tra thông tin, đổi vé hoặc kiểm soát chỗ ngồi.</p>
+      </div>
     </div>
   </div>
 
@@ -347,7 +408,8 @@
       opNameBadge.innerHTML = `<span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-building-flag text-blue-600"></i> Nhà xe: <strong>${opDisplayName}</strong></span>`;
     }
 
-    await reloadAllData();
+    // TỐI ƯU HIỆU NĂNG: Chỉ nạp trước tab mặc định (Đội xe & Tuyến đường), các tab khác Lazy load khi click
+    await initTab('buses');
   })();
 
   // Lấy ID nhà xe đang được chọn
@@ -380,22 +442,59 @@
     }
   }
 
+  // Quản lý cờ Lazy Loading theo từng Tab
+  let activeMainTab = 'buses';
+  const tabLoaded = { buses: false, routes: false, trips: false, tickets: false, maintenance: false, lookup: false };
+
+  async function initTab(tab) {
+    activeMainTab = tab;
+    if (tab === 'buses' && !tabLoaded.buses) {
+      await Promise.all([loadBuses(), loadRoutes()]);
+      tabLoaded.buses = true;
+      tabLoaded.routes = true;
+    } else if (tab === 'trips' && !tabLoaded.trips) {
+      if (!tabLoaded.routes) {
+        await loadRoutes();
+        tabLoaded.routes = true;
+      }
+      await loadTrips();
+      tabLoaded.trips = true;
+    } else if (tab === 'tickets' && !tabLoaded.tickets) {
+      if (!tabLoaded.trips) {
+        await loadTrips();
+        tabLoaded.trips = true;
+      }
+      await loadOperatorTickets();
+      tabLoaded.tickets = true;
+    } else if (tab === 'lookup') {
+      tabLoaded.lookup = true;
+      setTimeout(() => document.getElementById('lookup-input')?.focus(), 150);
+    }
+  }
+
   async function onOperatorChanged() {
     const sel = document.getElementById('operator-select');
     currentOpId = sel.value ? Number(sel.value) : null;
-    await reloadAllData();
+    // Reset cờ nạp dữ liệu để các tab cập nhật lại khi chuyển
+    Object.keys(tabLoaded).forEach(k => tabLoaded[k] = false);
+    await initTab(activeMainTab);
   }
 
   async function reloadAllData() {
-    await Promise.all([loadBuses(), loadRoutes(), loadTrips(), loadOperatorTickets()]);
+    Object.keys(tabLoaded).forEach(k => tabLoaded[k] = false);
+    await initTab(activeMainTab);
   }
 
-  // ===== CHUYỂN TAB =====
+  // ===== CHUYỂN TAB (LAZY LOADING) =====
   function switchMainTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.mtab').forEach(el => el.classList.remove('mtab-active'));
-    document.getElementById(`tab-${tab}`).classList.remove('hidden');
-    document.getElementById(`mtab-${tab}`).classList.add('mtab-active');
+    const target = document.getElementById(`tab-${tab}`);
+    if (target) target.classList.remove('hidden');
+    const tabBtn = document.getElementById(`mtab-${tab}`);
+    if (tabBtn) tabBtn.classList.add('mtab-active');
+
+    initTab(tab);
   }
 
   // ===== TẢI DANH SÁCH XE =====
@@ -797,6 +896,212 @@
       filter.value = String(tripId);
     }
     filterOperatorTickets();
+  }
+
+  // ============================================================
+  // TÍNH NĂNG: TRA CỨU KHÁCH HÀNG & VÉ (SĐT / MÃ VÉ)
+  // ============================================================
+  let lookupTimer = null;
+  function debouncedLookup() {
+    clearTimeout(lookupTimer);
+    const val = document.getElementById('lookup-input').value.trim();
+    const clearBtn = document.getElementById('btn-clear-lookup');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+
+    if (val.length >= 3) {
+      lookupTimer = setTimeout(() => {
+        executeLookup();
+      }, 350);
+    } else if (val.length === 0) {
+      resetLookupUI();
+    }
+  }
+
+  function clearLookupInput() {
+    document.getElementById('lookup-input').value = '';
+    document.getElementById('btn-clear-lookup').classList.add('hidden');
+    resetLookupUI();
+  }
+
+  function quickFillLookup(val) {
+    const inp = document.getElementById('lookup-input');
+    inp.value = val;
+    document.getElementById('btn-clear-lookup').classList.remove('hidden');
+    executeLookup();
+  }
+
+  function resetLookupUI() {
+    const container = document.getElementById('lookup-results-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-200">
+        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-3 shadow-xs">
+          <i class="fa-solid fa-address-book"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-base">Sẵn sàng tra cứu hành khách</h3>
+        <p class="text-xs text-gray-400 mt-1 max-w-md mx-auto">Nhập số điện thoại của hành khách hoặc mã vé khi có khách cần kiểm tra thông tin, đổi vé hoặc kiểm soát chỗ ngồi.</p>
+      </div>
+    `;
+  }
+
+  async function executeLookup() {
+    const keyword = document.getElementById('lookup-input')?.value.trim();
+    if (!keyword) {
+      showToast('Vui lòng nhập Số điện thoại hoặc Mã vé để tra cứu!', 'warning');
+      return;
+    }
+
+    const container = document.getElementById('lookup-results-container');
+    container.innerHTML = `
+      <div class="bg-white rounded-2xl p-10 text-center border border-gray-100 shadow-xs">
+        <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-xs font-bold text-gray-600">Đang tra cứu dữ liệu khách hàng theo "${keyword}"...</p>
+      </div>
+    `;
+
+    try {
+      const opId = getSelectedOperatorId();
+      const params = { keyword: keyword };
+      if (opId) params.operatorId = opId;
+
+      const data = await fetchAPI('/operator/customers/lookup', 'GET', null, params);
+      const customers = Array.isArray(data) ? data : [];
+
+      renderLookupResults(customers, keyword);
+
+    } catch (err) {
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl p-8 text-center border border-rose-100 shadow-xs">
+          <div class="text-3xl text-rose-500 mb-2">⚠️</div>
+          <p class="text-sm font-bold text-gray-800">Không thể thực hiện tra cứu</p>
+          <p class="text-xs text-gray-400 mt-1">Đã xảy ra lỗi kết nối tới máy chủ. Vui lòng thử lại sau.</p>
+        </div>
+      `;
+    }
+  }
+
+  function renderLookupResults(customers, keyword) {
+    const container = document.getElementById('lookup-results-container');
+    if (!container) return;
+
+    if (customers.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl p-12 text-center border border-amber-200 bg-amber-50/20 shadow-xs">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mx-auto mb-3">
+            <i class="fa-solid fa-user-xmark"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 text-base">Không tìm thấy khách hàng nào</h3>
+          <p class="text-xs text-gray-500 mt-1">Không có hành khách hoặc vé nào khớp với từ khóa: <strong>"${keyword}"</strong></p>
+          <p class="text-[11px] text-gray-400 mt-0.5">Lưu ý: Nếu bạn đang đăng nhập tài khoản Nhà xe, hệ thống chỉ hiển thị vé thuộc về nhà xe của bạn.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const html = customers.map((c, idx) => {
+      const tickets = Array.isArray(c.tickets) ? c.tickets : [];
+      const firstChar = (c.customerName || 'K').charAt(0).toUpperCase();
+
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden mb-4">
+          <!-- Customer Profile Header -->
+          <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-md">
+                ${firstChar}
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base font-extrabold text-white">${c.customerName || 'Khách Hàng'}</h3>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-500/20 text-blue-300 border border-blue-400/30">Hành khách</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-slate-300 mt-1 flex-wrap">
+                  <span class="flex items-center gap-1 font-semibold text-emerald-400">
+                    <i class="fa-solid fa-phone text-[10px]"></i>
+                    <a href="tel:${c.customerPhone}" class="hover:underline">${c.customerPhone || '—'}</a>
+                  </span>
+                  ${c.customerEmail ? `
+                    <span>•</span>
+                    <span class="flex items-center gap-1 text-slate-400">
+                      <i class="fa-solid fa-envelope text-[10px]"></i>
+                      ${c.customerEmail}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Stat Counters -->
+            <div class="flex items-center gap-2.5 text-right flex-wrap">
+              <div class="bg-white/10 rounded-xl px-3 py-1.5 border border-white/10">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Tổng số vé</div>
+                <div class="text-sm font-black text-white">${c.totalTickets} vé</div>
+              </div>
+              <div class="bg-emerald-500/20 rounded-xl px-3 py-1.5 border border-emerald-500/30">
+                <div class="text-[10px] font-bold text-emerald-300 uppercase">Đã thanh toán</div>
+                <div class="text-sm font-black text-emerald-300">${c.confirmedTickets} vé</div>
+              </div>
+              <div class="bg-amber-500/20 rounded-xl px-3 py-1.5 border border-amber-500/30">
+                <div class="text-[10px] font-bold text-amber-300 uppercase">Tổng chi tiêu</div>
+                <div class="text-sm font-black text-amber-300">${formatVND(c.totalSpent)}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tickets of this customer -->
+          <div class="p-4 sm:p-5">
+            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-ticket text-blue-600"></i>
+              <span>Lịch sử các vé đã đặt (${tickets.length} vé):</span>
+            </h4>
+
+            <div class="space-y-3">
+              ${tickets.map(t => {
+                const depTime = t.departureTime ? formatDateTime(t.departureTime) : '—';
+                const arrTime = t.arrivalTime ? formatDateTime(t.arrivalTime) : '—';
+                const seatBadge = t.seatNumber ? `Ghế ${t.seatNumber}` : 'Chưa có ghế';
+
+                return `
+                  <div class="bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 hover:bg-white hover:shadow-xs transition flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex flex-col items-center justify-center shrink-0">
+                        <i class="fa-solid fa-chair text-xs"></i>
+                        <span class="text-xs font-black">${t.seatNumber || '—'}</span>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                          <span class="text-xs font-mono font-black text-gray-900">${t.ticketCode || '#' + t.ticketId}</span>
+                          <span class="text-[11px] bg-indigo-600 text-white font-extrabold px-2 py-0.5 rounded-md">${seatBadge}</span>
+                          ${statusBadge(t.status)}
+                        </div>
+                        <div class="text-xs font-bold text-gray-800">
+                          ${t.origin || 'Điểm đi'} → ${t.destination || 'Điểm đến'}
+                          <span class="text-gray-400 font-normal ml-1">(Chuyến #${t.tripId})</span>
+                        </div>
+                        <div class="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span>🏢 ${t.operatorName || 'Nhà xe'}</span>
+                          <span>•</span>
+                          <span>🚌 Xe: <strong>${t.busPlateNumber || '—'}</strong> (${t.busType || 'Xe khách'})</span>
+                          <span>•</span>
+                          <span>🕐 Giờ xuất bến: <strong>${depTime}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-left md:text-right shrink-0">
+                      <div class="text-sm font-black text-rose-600">${formatVND(t.price)}</div>
+                      <div class="text-[10px] text-gray-400 mt-0.5">Đặt lúc: ${t.bookingTime ? formatDateTime(t.bookingTime) : '—'}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = html;
   }
 
   // ===== POPULATE SELECT XE =====

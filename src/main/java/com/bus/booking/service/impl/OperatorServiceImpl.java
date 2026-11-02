@@ -244,6 +244,64 @@ public class OperatorServiceImpl implements OperatorService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.bus.booking.dto.response.CustomerLookupDto> lookupCustomers(Long operatorId, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        Long resolvedId = resolveOperatorId(operatorId);
+        String cleanKeyword = keyword.trim();
+        String pattern = "%" + cleanKeyword + "%";
+
+        // Tìm tối đa 50 vé khớp với từ khóa (SĐT, Mã vé, Tên khách)
+        List<com.bus.booking.entity.TicketEntity> tickets = ticketRepository.lookupTickets(
+                resolvedId, pattern, org.springframework.data.domain.PageRequest.of(0, 50));
+
+        if (tickets.isEmpty()) {
+            return List.of();
+        }
+
+        // Gom nhóm theo số điện thoại khách hàng (hoặc mã vé/tên nếu phone trống)
+        java.util.Map<String, List<com.bus.booking.entity.TicketEntity>> grouped = tickets.stream()
+                .collect(Collectors.groupingBy(
+                        t -> (t.getCustomerPhone() != null && !t.getCustomerPhone().isBlank())
+                                ? t.getCustomerPhone().trim()
+                                : ("NO_PHONE_" + (t.getUser() != null ? t.getUser().getId() : t.getId())),
+                        java.util.LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        return grouped.values().stream().map(custTickets -> {
+            com.bus.booking.entity.TicketEntity first = custTickets.get(0);
+
+            int total = custTickets.size();
+            int confirmed = (int) custTickets.stream()
+                    .filter(t -> t.getStatus() == com.bus.booking.enums.TicketStatus.CONFIRMED)
+                    .count();
+
+            java.math.BigDecimal spent = custTickets.stream()
+                    .filter(t -> t.getStatus() == com.bus.booking.enums.TicketStatus.CONFIRMED)
+                    .map(com.bus.booking.entity.TicketEntity::getPrice)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            List<com.bus.booking.dto.response.HoldSeatResponse> ticketDtos = custTickets.stream()
+                    .map(this::toHoldSeatResponse)
+                    .collect(Collectors.toList());
+
+            return com.bus.booking.dto.response.CustomerLookupDto.builder()
+                    .customerName(first.getCustomerName())
+                    .customerPhone(first.getCustomerPhone())
+                    .customerEmail(first.getCustomerEmail())
+                    .totalTickets(total)
+                    .confirmedTickets(confirmed)
+                    .totalSpent(spent)
+                    .tickets(ticketDtos)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
     private com.bus.booking.dto.response.HoldSeatResponse toHoldSeatResponse(com.bus.booking.entity.TicketEntity t) {
         if (t == null) return null;
         TripEntity trip = t.getTrip();

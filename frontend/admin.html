@@ -79,6 +79,57 @@
     </div>
   </div>
 
+  <!-- ===== TRA CỨU KHÁCH HÀNG & VÉ (SĐT / MÃ VÉ) ===== -->
+  <div class="bg-white rounded-2xl shadow p-6 mb-8 border border-gray-100">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <span class="text-indigo-600"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+          <span>Tra cứu Thông tin Khách hàng & Vé (Admin)</span>
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">Tìm kiếm nhanh theo Số điện thoại, Mã vé hoặc Tên khách hàng trên toàn bộ hệ thống các nhà xe</p>
+      </div>
+    </div>
+
+    <!-- Search Input Bar -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 mb-4">
+      <div class="relative flex-1 w-full">
+        <input id="admin-lookup-input" type="text" oninput="adminDebouncedLookup()" placeholder="Nhập Số điện thoại (vd: 0901234567) hoặc Mã vé (vd: TK-)..."
+          class="w-full h-11 pl-10 pr-10 text-xs font-bold rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50" />
+        <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <button type="button" onclick="adminClearLookup()" id="admin-clear-lookup-btn" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+      <button type="button" onclick="adminExecuteLookup()"
+        class="w-full sm:w-auto h-11 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 shrink-0">
+        <i class="fa-solid fa-search"></i>
+        <span>Tra cứu</span>
+      </button>
+    </div>
+
+    <!-- Quick Chips -->
+    <div class="flex items-center gap-2 pb-3 mb-3 border-b border-gray-100 text-xs text-gray-500 flex-wrap">
+      <span class="font-bold text-gray-400 text-[11px] uppercase">Gợi ý:</span>
+      <button type="button" onclick="adminQuickFill('0901234567')" class="px-2.5 py-0.5 rounded-lg bg-gray-100 hover:bg-gray-200 font-mono text-gray-700 font-semibold text-[11px]">
+        📞 0901234567
+      </button>
+      <button type="button" onclick="adminQuickFill('TK-')" class="px-2.5 py-0.5 rounded-lg bg-gray-100 hover:bg-gray-200 font-mono text-gray-700 font-semibold text-[11px]">
+        🎫 Mã vé TK-
+      </button>
+      <button type="button" onclick="adminQuickFill('Nguyễn')" class="px-2.5 py-0.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-[11px]">
+        👤 Khách hàng 'Nguyễn'
+      </button>
+    </div>
+
+    <!-- Result container -->
+    <div id="admin-lookup-results" class="min-h-[50px]">
+      <p class="text-xs text-gray-400 text-center py-2">Nhập số điện thoại hoặc mã vé để hiển thị thông tin chi tiết.</p>
+    </div>
+  </div>
+
   <!-- ===== DANH SÁCH VÉ ĐẶT GẦN ĐÂY (Realtime DB) ===== -->
   <div class="bg-white rounded-2xl shadow p-6 mb-8 border border-gray-100">
     <div class="flex items-center justify-between mb-4">
@@ -577,6 +628,119 @@
       btn.disabled = false;
       btn.textContent = '✅ Thêm đối tác';
       showLoading(false);
+    }
+  }
+
+  // ============================================================
+  // TRA CỨU KHÁCH HÀNG & VÉ CHO ADMIN (SĐT / MÃ VÉ)
+  // ============================================================
+  let adminLookupTimer = null;
+  function adminDebouncedLookup() {
+    clearTimeout(adminLookupTimer);
+    const val = document.getElementById('admin-lookup-input').value.trim();
+    const clearBtn = document.getElementById('admin-clear-lookup-btn');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+
+    if (val.length >= 3) {
+      adminLookupTimer = setTimeout(() => {
+        adminExecuteLookup();
+      }, 350);
+    } else if (val.length === 0) {
+      document.getElementById('admin-lookup-results').innerHTML =
+        '<p class="text-xs text-gray-400 text-center py-2">Nhập số điện thoại hoặc mã vé để hiển thị thông tin chi tiết.</p>';
+    }
+  }
+
+  function adminClearLookup() {
+    document.getElementById('admin-lookup-input').value = '';
+    document.getElementById('admin-clear-lookup-btn').classList.add('hidden');
+    document.getElementById('admin-lookup-results').innerHTML =
+      '<p class="text-xs text-gray-400 text-center py-2">Nhập số điện thoại hoặc mã vé để hiển thị thông tin chi tiết.</p>';
+  }
+
+  function adminQuickFill(val) {
+    document.getElementById('admin-lookup-input').value = val;
+    document.getElementById('admin-clear-lookup-btn').classList.remove('hidden');
+    adminExecuteLookup();
+  }
+
+  async function adminExecuteLookup() {
+    const keyword = document.getElementById('admin-lookup-input')?.value.trim();
+    if (!keyword) {
+      showToast('Vui lòng nhập Số điện thoại hoặc Mã vé để tra cứu!', 'warning');
+      return;
+    }
+
+    const container = document.getElementById('admin-lookup-results');
+    container.innerHTML = `
+      <div class="py-6 text-center">
+        <div class="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-2"></div>
+        <p class="text-xs font-semibold text-gray-500">Đang tìm khách hàng theo "${keyword}"...</p>
+      </div>
+    `;
+
+    try {
+      const data = await fetchAPI('/admin/customers/lookup', 'GET', null, { keyword });
+      const customers = Array.isArray(data) ? data : [];
+
+      if (customers.length === 0) {
+        container.innerHTML = `
+          <div class="py-6 text-center text-gray-400">
+            <div class="text-2xl mb-1">🔍</div>
+            <p class="text-xs font-semibold">Không tìm thấy khách hàng hoặc vé nào khớp với "${keyword}".</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = customers.map(c => {
+        const tickets = Array.isArray(c.tickets) ? c.tickets : [];
+        return `
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-3 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-extrabold text-sm text-gray-900">${c.customerName || 'Khách Hàng'}</span>
+                  <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                    📞 <a href="tel:${c.customerPhone}" class="hover:underline">${c.customerPhone || '—'}</a>
+                  </span>
+                </div>
+                ${c.customerEmail ? `<div class="text-[11px] text-gray-500 mt-0.5">✉️ ${c.customerEmail}</div>` : ''}
+              </div>
+              <div class="flex items-center gap-2 text-xs font-semibold flex-wrap">
+                <span class="bg-white px-2.5 py-1 rounded-lg border border-gray-200">Tổng: <strong>${c.totalTickets}</strong> vé</span>
+                <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200">Đã bán: <strong>${c.confirmedTickets}</strong></span>
+                <span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-200">Chi: <strong>${formatVND(c.totalSpent)}</strong></span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2">
+              ${tickets.map(t => `
+                <div class="bg-white rounded-lg p-2.5 border border-gray-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2.5 flex-wrap">
+                    <span class="font-mono font-bold text-gray-800">${t.ticketCode || '#' + t.ticketId}</span>
+                    <span class="bg-indigo-600 text-white font-extrabold px-2 py-0.5 rounded text-[11px]">Ghế ${t.seatNumber || '—'}</span>
+                    ${statusBadge(t.status)}
+                    <span class="font-semibold text-gray-700">${t.origin} → ${t.destination}</span>
+                    <span class="text-gray-400">(${t.operatorName})</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-right">
+                    <span class="text-gray-500 text-[11px]">🕐 ${formatDateTime(t.departureTime)}</span>
+                    <span class="font-bold text-rose-600">${formatVND(t.price)}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+    } catch (e) {
+      container.innerHTML = `
+        <div class="py-4 text-center text-rose-500 text-xs font-semibold">
+          Lỗi tra cứu. Vui lòng thử lại!
+        </div>
+      `;
     }
   }
 

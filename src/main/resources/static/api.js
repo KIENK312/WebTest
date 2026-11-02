@@ -130,7 +130,7 @@ function showLoading(show = true) {
 // ============================================================
 // 3. FETCH API TRUNG TÂM
 // ============================================================
-async function fetchAPI(endpoint, method = 'GET', body = null, params = null) {
+async function fetchAPI(endpoint, method = 'GET', body = null, params = null, extra = {}) {
   let url = `${API_BASE}${endpoint}`;
   if (params) {
     const qs = new URLSearchParams(
@@ -154,8 +154,14 @@ async function fetchAPI(endpoint, method = 'GET', body = null, params = null) {
     options.body = JSON.stringify(body);
   }
 
-  // Tự động disable nút submit & hiện spinner
-  showLoading(true);
+  // TỐI ƯU HIỆU NĂNG UX:
+  // Chỉ hiển thị global overlay chặn màn hình cho các thao tác ghi dữ liệu (POST, PUT, DELETE)
+  // hoặc khi người gọi yêu cầu rõ qua extra.showOverlay === true.
+  // Các lệnh đọc GET (tìm kiếm, tải danh sách, tra cứu) sẽ chạy mượt mà không block toàn màn hình.
+  const shouldShowOverlay = extra.showOverlay !== undefined ? extra.showOverlay : (method !== 'GET');
+  if (shouldShowOverlay) {
+    showLoading(true);
+  }
 
   try {
     const response = await fetch(url, options);
@@ -197,7 +203,7 @@ async function fetchAPI(endpoint, method = 'GET', body = null, params = null) {
     return data?.data !== undefined ? data.data : data;
 
   } catch (networkError) {
-    if (!networkError.status) {
+    if (!networkError.status && shouldShowOverlay) {
       showErrorModal(
         'Mất kết nối máy chủ',
         'Không thể kết nối đến REST API tại http://localhost:8080. Hãy đảm bảo máy chủ Spring Boot đang chạy!'
@@ -205,7 +211,9 @@ async function fetchAPI(endpoint, method = 'GET', body = null, params = null) {
     }
     throw networkError;
   } finally {
-    showLoading(false);
+    if (shouldShowOverlay) {
+      showLoading(false);
+    }
   }
 }
 

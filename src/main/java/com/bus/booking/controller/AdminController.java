@@ -19,6 +19,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final com.bus.booking.service.OperatorService operatorService;
 
     /**
      * Bảng điều khiển tổng quan cho Quản trị viên (Admin Overview/Dashboard):
@@ -59,5 +60,17 @@ public class AdminController {
         PartnerDto saved = adminService.createPartner(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("Đăng ký đối tác nhà xe mới thành công", saved));
+    }
+
+    /**
+     * Tra cứu thông tin khách hàng và danh sách vé trên toàn hệ thống (Dành cho Admin).
+     */
+    @GetMapping("/customers/lookup")
+    public ResponseEntity<ApiResponse<List<com.bus.booking.dto.response.CustomerLookupDto>>> lookupCustomers(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "operatorId", required = false) Long operatorId) {
+        List<com.bus.booking.dto.response.CustomerLookupDto> results =
+                operatorService.lookupCustomers(operatorId, keyword);
+        return ResponseEntity.ok(ApiResponse.success("Admin tra cứu thông tin khách hàng thành công", results));
     }
 }

@@ -111,4 +111,17 @@ public class OperatorController {
                 operatorService.getOperatorTickets(operatorId, tripId, status);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vé đặt của nhà xe thành công", tickets));
     }
+
+    /**
+     * Tra cứu nhanh thông tin khách hàng bằng số điện thoại hoặc mã vé.
+     * Cho phép Nhà xe tra cứu khách hàng của hãng mình và Admin tra cứu trên toàn hệ thống.
+     */
+    @GetMapping("/customers/lookup")
+    public ResponseEntity<ApiResponse<List<com.bus.booking.dto.response.CustomerLookupDto>>> lookupCustomers(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "operatorId", required = false) Long operatorId) {
+        List<com.bus.booking.dto.response.CustomerLookupDto> results =
+                operatorService.lookupCustomers(operatorId, keyword);
+        return ResponseEntity.ok(ApiResponse.success("Tra cứu thông tin khách hàng thành công", results));
+    }
 }

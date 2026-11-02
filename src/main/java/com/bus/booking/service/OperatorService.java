@@ -55,6 +55,12 @@ public interface OperatorService {
     List<com.bus.booking.dto.response.HoldSeatResponse> getOperatorTickets(Long operatorId, Long tripId, String status);
 
     /**
+     * Tra cứu nhanh thông tin khách hàng bằng số điện thoại hoặc số vé (mã vé).
+     * Phân quyền: Nhà xe chỉ thấy khách hàng trên các chuyến của hãng; Admin có thể tra cứu toàn bộ.
+     */
+    List<com.bus.booking.dto.response.CustomerLookupDto> lookupCustomers(Long operatorId, String keyword);
+
+    /**
      * Xử lý giải quyết operatorId an toàn theo phân quyền người dùng.
      */
     Long resolveOperatorId(Long operatorId);

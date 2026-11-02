@@ -164,4 +164,27 @@ public interface TicketRepository extends JpaRepository<TicketEntity, Long> {
             @Param("tripId") Long tripId,
             @Param("status") TicketStatus status
     );
+
+    /**
+     * Tra cứu nhanh thông tin khách hàng và vé theo Số điện thoại, Mã vé hoặc Tên khách hàng.
+     * Sử dụng JOIN FETCH tối ưu, phân quyền theo Nhà xe (operatorId) hoặc Admin (toàn quyền).
+     */
+    @Query("SELECT t FROM TicketEntity t " +
+           "JOIN FETCH t.trip tr " +
+           "JOIN FETCH tr.route r " +
+           "JOIN FETCH tr.bus b " +
+           "JOIN FETCH b.operator bo " +
+           "JOIN FETCH t.seat s " +
+           "WHERE (:operatorId IS NULL OR bo.id = :operatorId OR r.operator.id = :operatorId) " +
+           "  AND (" +
+           "       t.customerPhone LIKE :pattern " +
+           "    OR t.ticketCode LIKE :pattern " +
+           "    OR LOWER(t.customerName) LIKE LOWER(:pattern)" +
+           "  ) " +
+           "ORDER BY t.bookingTime DESC")
+    List<TicketEntity> lookupTickets(
+            @Param("operatorId") Long operatorId,
+            @Param("pattern") String pattern,
+            Pageable pageable
+    );
 }
