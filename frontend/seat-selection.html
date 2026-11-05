@@ -456,20 +456,22 @@
         `;
       }
 
-      // Sơ đồ chuẩn 7 hàng theo Image 2:
+      // Sơ đồ chuẩn 7 hàng theo hình mẫu người dùng yêu cầu:
       // Hàng 1 (Đầu xe): [Trống/Cửa lên], [Lối đi], Ghế 01
       // Hàng 2: Ghế 02, Ghế 03, Ghế 04
       // Hàng 3: Ghế 05, Ghế 06, Ghế 07
       // Hàng 4: Ghế 08, Ghế 09, Ghế 10
       // Hàng 5: Ghế 11, Ghế 12, Ghế 13
       // Hàng 6: Ghế 14, Ghế 15, Ghế 16
+      // Hàng 7 (Cuối xe): Ghế 17, Ghế 19, Ghế 21 (3 cột thẳng hàng, 2 lối đi ở giữa)
       const rowsData = [
         [null, null, `${prefix}01`],
         [`${prefix}02`, `${prefix}03`, `${prefix}04`],
         [`${prefix}05`, `${prefix}06`, `${prefix}07`],
         [`${prefix}08`, `${prefix}09`, `${prefix}10`],
         [`${prefix}11`, `${prefix}12`, `${prefix}13`],
-        [`${prefix}14`, `${prefix}15`, `${prefix}16`]
+        [`${prefix}14`, `${prefix}15`, `${prefix}16`],
+        [`${prefix}17`, `${prefix}19`, `${prefix}21`]
       ];
 
       let html = `<div class="space-y-3 sm:space-y-4 max-w-sm sm:max-w-md mx-auto">`;
@@ -491,25 +493,12 @@
         html += `</div>`;
       });
 
-      // Hàng 7 (Cuối xe): Băng ghế 5 chỗ liền nhau (17, 18, 19, 20, 21)
-      html += `
-        <div class="pt-4 border-t border-dashed border-slate-200">
-          <div class="grid grid-cols-5 gap-1.5 sm:gap-2.5 justify-items-center">
-            ${renderSeat(`${prefix}17`)}
-            ${renderSeat(`${prefix}18`)}
-            ${renderSeat(`${prefix}19`)}
-            ${renderSeat(`${prefix}20`)}
-            ${renderSeat(`${prefix}21`)}
-          </div>
-        </div>
-      `;
-
-      // Nếu có thêm ghế đặc biệt ngoài 21 ghế chuẩn, render bổ sung ở dưới
+      // Nếu có thêm ghế ngoài các mã chuẩn, render bổ sung ở dưới
       const standardCodes = new Set([
         `${prefix}01`, `${prefix}02`, `${prefix}03`, `${prefix}04`, `${prefix}05`, `${prefix}06`,
         `${prefix}07`, `${prefix}08`, `${prefix}09`, `${prefix}10`, `${prefix}11`, `${prefix}12`,
-        `${prefix}13`, `${prefix}14`, `${prefix}15`, `${prefix}16`, `${prefix}17`, `${prefix}18`,
-        `${prefix}19`, `${prefix}20`, `${prefix}21`
+        `${prefix}13`, `${prefix}14`, `${prefix}15`, `${prefix}16`, `${prefix}17`, `${prefix}19`,
+        `${prefix}21`
       ]);
       const extraSeats = seats.filter(s => !standardCodes.has(s.seatNumber));
       if (extraSeats.length > 0) {

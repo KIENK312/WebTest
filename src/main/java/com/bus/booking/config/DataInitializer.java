@@ -236,21 +236,21 @@ public class DataInitializer implements CommandLineRunner {
         if (busRepository.count() == 0) {
             // Xe Phương Trang
             BusEntity bus1 = busRepository.save(BusEntity.builder()
-                    .operator(futa).plateNumber("51B-123.45").busType("Giường nằm 42 chỗ")
-                    .totalSeats(42).status(BusStatus.ACTIVE).build());
+                    .operator(futa).plateNumber("51B-123.45").busType("Giường nằm 38 chỗ")
+                    .totalSeats(38).status(BusStatus.ACTIVE).build());
 
             BusEntity bus2 = busRepository.save(BusEntity.builder()
                     .operator(futa).plateNumber("51B-987.65").busType("Limousine VIP 24 phòng")
                     .totalSeats(24).status(BusStatus.ACTIVE).build());
 
             BusEntity bus3 = busRepository.save(BusEntity.builder()
-                    .operator(futa).plateNumber("51B-555.55").busType("Giường nằm 42 chỗ")
-                    .totalSeats(42).status(BusStatus.MAINTENANCE).build());
+                    .operator(futa).plateNumber("51B-555.55").busType("Giường nằm 38 chỗ")
+                    .totalSeats(38).status(BusStatus.MAINTENANCE).build());
 
             // Xe Hoàng Long
             BusEntity busHl1 = busRepository.save(BusEntity.builder()
-                    .operator(hoangLong).plateNumber("29B-456.78").busType("Giường nằm 42 chỗ")
-                    .totalSeats(42).status(BusStatus.ACTIVE).build());
+                    .operator(hoangLong).plateNumber("29B-456.78").busType("Giường nằm 38 chỗ")
+                    .totalSeats(38).status(BusStatus.ACTIVE).build());
 
             BusEntity busHl2 = busRepository.save(BusEntity.builder()
                     .operator(hoangLong).plateNumber("29B-888.88").busType("Limousine VIP 24 phòng")
@@ -260,11 +260,11 @@ public class DataInitializer implements CommandLineRunner {
                     .operator(hoangLong).plateNumber("29B-999.99").busType("Limousine VIP 24 phòng")
                     .totalSeats(24).status(BusStatus.ACTIVE).build());
 
-            // Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A21, Tầng 2 B01..B21)
-            createSeatsForBus(bus1, 42, "STANDARD");
+            // Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A17, A19, A21; Tầng 2 B01..B17, B19, B21)
+            createSeatsForBus(bus1, 38, "STANDARD");
             createSeatsForBus(bus2, 24, "VIP");
-            createSeatsForBus(bus3, 42, "STANDARD");
-            createSeatsForBus(busHl1, 42, "STANDARD");
+            createSeatsForBus(bus3, 38, "STANDARD");
+            createSeatsForBus(busHl1, 38, "STANDARD");
             createSeatsForBus(busHl2, 24, "VIP");
             createSeatsForBus(busHl3, 24, "VIP");
 
@@ -403,27 +403,45 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createSeatsForBus(BusEntity bus, int totalSeats, String seatType) {
-        int seatsPerFloor = totalSeats / 2;
         List<SeatEntity> seats = new ArrayList<>();
 
-        // Tầng 1: A01 -> A18
-        for (int i = 1; i <= seatsPerFloor; i++) {
-            seats.add(SeatEntity.builder()
-                    .bus(bus)
-                    .floorNumber(1)
-                    .seatNumber(String.format("A%02d", i))
-                    .seatType(seatType)
-                    .build());
-        }
-
-        // Tầng 2: B01 -> B18
-        for (int i = 1; i <= seatsPerFloor; i++) {
-            seats.add(SeatEntity.builder()
-                    .bus(bus)
-                    .floorNumber(2)
-                    .seatNumber(String.format("B%02d", i))
-                    .seatType(seatType)
-                    .build());
+        if (totalSeats == 38) {
+            // Sơ đồ chuẩn 38 chỗ giường nằm 7 hàng 3 cột (bỏ 18 và 20 ở 2 lối đi: A01..A17, A19, A21)
+            int[] seatIndices = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 21};
+            for (int idx : seatIndices) {
+                seats.add(SeatEntity.builder()
+                        .bus(bus)
+                        .floorNumber(1)
+                        .seatNumber(String.format("A%02d", idx))
+                        .seatType(seatType)
+                        .build());
+            }
+            for (int idx : seatIndices) {
+                seats.add(SeatEntity.builder()
+                        .bus(bus)
+                        .floorNumber(2)
+                        .seatNumber(String.format("B%02d", idx))
+                        .seatType(seatType)
+                        .build());
+            }
+        } else {
+            int seatsPerFloor = totalSeats / 2;
+            for (int i = 1; i <= seatsPerFloor; i++) {
+                seats.add(SeatEntity.builder()
+                        .bus(bus)
+                        .floorNumber(1)
+                        .seatNumber(String.format("A%02d", i))
+                        .seatType(seatType)
+                        .build());
+            }
+            for (int i = 1; i <= seatsPerFloor; i++) {
+                seats.add(SeatEntity.builder()
+                        .bus(bus)
+                        .floorNumber(2)
+                        .seatNumber(String.format("B%02d", i))
+                        .seatType(seatType)
+                        .build());
+            }
         }
 
         seatRepository.saveAll(seats);
