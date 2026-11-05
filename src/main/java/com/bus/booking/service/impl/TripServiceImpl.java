@@ -172,6 +172,16 @@ public class TripServiceImpl implements TripService {
         }).toList();
     }
 
+    @Override
+    public TripSearchResponse getTripById(Long tripId) {
+        log.info("Lấy thông tin chi tiết chuyến xe ID: {}", tripId);
+        TripEntity trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chuyến đi với ID: " + tripId));
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(10);
+        long bookedSeats = ticketRepository.countByTripIdAndStatusIn(trip.getId(), List.of(TicketStatus.CONFIRMED, TicketStatus.PENDING));
+        return mapToTripSearchResponse(trip, bookedSeats);
+    }
+
     private TripSearchResponse mapToTripSearchResponse(TripEntity trip, long bookedSeats) {
         BusEntity bus = trip.getBus();
         int totalSeats = bus.getTotalSeats();

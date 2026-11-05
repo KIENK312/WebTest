@@ -236,21 +236,21 @@ public class DataInitializer implements CommandLineRunner {
         if (busRepository.count() == 0) {
             // Xe Phương Trang
             BusEntity bus1 = busRepository.save(BusEntity.builder()
-                    .operator(futa).plateNumber("51B-123.45").busType("Giường nằm 36 chỗ")
-                    .totalSeats(36).status(BusStatus.ACTIVE).build());
+                    .operator(futa).plateNumber("51B-123.45").busType("Giường nằm 42 chỗ")
+                    .totalSeats(42).status(BusStatus.ACTIVE).build());
 
             BusEntity bus2 = busRepository.save(BusEntity.builder()
                     .operator(futa).plateNumber("51B-987.65").busType("Limousine VIP 24 phòng")
                     .totalSeats(24).status(BusStatus.ACTIVE).build());
 
             BusEntity bus3 = busRepository.save(BusEntity.builder()
-                    .operator(futa).plateNumber("51B-555.55").busType("Giường nằm 36 chỗ")
-                    .totalSeats(36).status(BusStatus.MAINTENANCE).build());
+                    .operator(futa).plateNumber("51B-555.55").busType("Giường nằm 42 chỗ")
+                    .totalSeats(42).status(BusStatus.MAINTENANCE).build());
 
             // Xe Hoàng Long
             BusEntity busHl1 = busRepository.save(BusEntity.builder()
-                    .operator(hoangLong).plateNumber("29B-456.78").busType("Giường nằm 36 chỗ")
-                    .totalSeats(36).status(BusStatus.ACTIVE).build());
+                    .operator(hoangLong).plateNumber("29B-456.78").busType("Giường nằm 42 chỗ")
+                    .totalSeats(42).status(BusStatus.ACTIVE).build());
 
             BusEntity busHl2 = busRepository.save(BusEntity.builder()
                     .operator(hoangLong).plateNumber("29B-888.88").busType("Limousine VIP 24 phòng")
@@ -260,11 +260,11 @@ public class DataInitializer implements CommandLineRunner {
                     .operator(hoangLong).plateNumber("29B-999.99").busType("Limousine VIP 24 phòng")
                     .totalSeats(24).status(BusStatus.ACTIVE).build());
 
-            // Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A18, Tầng 2 B01..B18)
-            createSeatsForBus(bus1, 36, "STANDARD");
+            // Ghế cho từng xe (Seats 2 tầng: Tầng 1 A01..A21, Tầng 2 B01..B21)
+            createSeatsForBus(bus1, 42, "STANDARD");
             createSeatsForBus(bus2, 24, "VIP");
-            createSeatsForBus(bus3, 36, "STANDARD");
-            createSeatsForBus(busHl1, 36, "STANDARD");
+            createSeatsForBus(bus3, 42, "STANDARD");
+            createSeatsForBus(busHl1, 42, "STANDARD");
             createSeatsForBus(busHl2, 24, "VIP");
             createSeatsForBus(busHl3, 24, "VIP");
 

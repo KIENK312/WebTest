@@ -34,6 +34,16 @@ public class TripController {
     }
 
     /**
+     * Lấy thông tin chi tiết một chuyến xe.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<TripSearchResponse>> getTripById(
+            @PathVariable("id") Long tripId) {
+        TripSearchResponse response = tripService.getTripById(tripId);
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin chuyến xe thành công", response));
+    }
+
+    /**
      * Lấy sơ đồ ghế và tình trạng từng ghế (AVAILABLE, HELD, BOOKED) của chuyến xe.
      */
     @GetMapping("/{id}/seats")

@@ -17,4 +17,9 @@ public interface TripService {
      * Lấy sơ đồ ghế và tình trạng từng ghế (AVAILABLE, HELD, BOOKED) của chuyến xe.
      */
     List<com.bus.booking.dto.response.TripSeatResponse> getTripSeats(Long tripId);
+
+    /**
+     * Lấy thông tin chi tiết một chuyến xe theo ID.
+     */
+    TripSearchResponse getTripById(Long tripId);
 }
