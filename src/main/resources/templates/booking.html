@@ -113,8 +113,8 @@
                 <div class="row g-2 text-center" style="max-height: 400px; overflow-y: auto;">
                     <div class="col-3 col-sm-2" th:each="seat : ${seats}">
                         <button type="button" 
-                                th:class="${seat.status.name() == 'AVAILABLE'} ? 'seat-btn seat-available' : 'seat-btn seat-booked'"
-                                th:disabled="${seat.status.name() != 'AVAILABLE'}"
+                                th:class="${seat.status == 'AVAILABLE'} ? 'seat-btn seat-available' : 'seat-btn seat-booked'"
+                                th:disabled="${seat.status != 'AVAILABLE'}"
                                 th:data-seat-id="${seat.seatId}"
                                 th:data-seat-num="${seat.seatNumber}"
                                 th:text="${seat.seatNumber}"

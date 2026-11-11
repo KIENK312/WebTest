@@ -51,9 +51,9 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="badge bg-primary me-2" th:text="${t.ticketCode}">TK-12345</span>
-                        <span class="badge bg-success" th:if="${t.status.name() == 'CONFIRMED'}">ĐÃ XUẤT VÉ</span>
-                        <span class="badge bg-warning text-dark" th:if="${t.status.name() == 'PENDING'}">CHỜ THANH TOÁN</span>
-                        <span class="badge bg-secondary" th:if="${t.status.name() == 'CANCELLED'}">ĐÃ HỦY</span>
+                        <span class="badge bg-success" th:if="${t.status != null and t.status.name() == 'CONFIRMED'}">ĐÃ XUẤT VÉ</span>
+                        <span class="badge bg-warning text-dark" th:if="${t.status != null and t.status.name() == 'PENDING'}">CHỜ THANH TOÁN</span>
+                        <span class="badge bg-secondary" th:if="${t.status != null and t.status.name() == 'CANCELLED'}">ĐÃ HỦY</span>
                     </div>
                     <div class="h5 fw-bold text-danger mb-0" th:text="${#numbers.formatDecimal(t.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">350,000 VNĐ</div>
                 </div>
@@ -61,15 +61,15 @@
                 <div class="row g-2 small text-secondary mt-1">
                     <div class="col-sm-6">Hành khách: <strong class="text-dark" th:text="${t.customerName}">Nguyễn Văn A</strong></div>
                     <div class="col-sm-6">Số ghế: <strong class="text-success fs-6" th:text="${t.seatNumber}">A01</strong></div>
-                    <div class="col-sm-6">Tuyến: <strong class="text-primary"><span th:text="${t.origin}">Hà Nội</span> $\to$ <span th:text="${t.destination}">Đà Nẵng</span></strong></div>
+                    <div class="col-sm-6">Tuyến: <strong class="text-primary"><span th:text="${t.origin}">Hà Nội</span> &rarr; <span th:text="${t.destination}">Đà Nẵng</span></strong></div>
                     <div class="col-sm-6">Khởi hành: <strong class="text-dark" th:text="${#temporals.format(t.departureTime, 'HH:mm - dd/MM/yyyy')}">08:00 - 12/11/2026</strong></div>
                 </div>
 
                 <div class="mt-3 pt-2 border-top d-flex justify-content-end gap-2">
-                    <a th:if="${t.status.name() == 'PENDING'}" th:href="@{'/reservations/' + ${t.ticketId} + '/payment-step'}" class="btn btn-warning btn-sm fw-semibold">
+                    <a th:if="${t.status != null and t.status.name() == 'PENDING'}" th:href="@{'/reservations/' + ${t.ticketId} + '/payment-step'}" class="btn btn-warning btn-sm fw-semibold">
                         <i class="bi bi-wallet2 me-1"></i>Tiếp Tục Thanh Toán
                     </a>
-                    <a th:if="${t.status.name() == 'CONFIRMED'}" th:href="@{'/reservations/' + ${t.ticketId} + '/confirmation'}" class="btn btn-outline-primary btn-sm fw-semibold">
+                    <a th:if="${t.status != null and t.status.name() == 'CONFIRMED'}" th:href="@{'/reservations/' + ${t.ticketId} + '/confirmation'}" class="btn btn-outline-primary btn-sm fw-semibold">
                         <i class="bi bi-qr-code me-1"></i>Xem Tem Số / Vé Điện Tử
                     </a>
                 </div>
