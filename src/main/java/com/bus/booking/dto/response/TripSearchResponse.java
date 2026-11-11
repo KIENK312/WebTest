@@ -33,4 +33,8 @@ public class TripSearchResponse {
 
     private int totalSeats;
     private int availableSeats;
+
+    public Long getId() {
+        return tripId;
+    }
 }

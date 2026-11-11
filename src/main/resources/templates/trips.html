@@ -107,7 +107,7 @@
                     <div class="col-md-3 text-md-end">
                         <div class="text-muted small">Giá vé chính thức</div>
                         <div class="h4 fw-bold text-danger mb-2" th:text="${#numbers.formatDecimal(trip.basePrice, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">350,000 VNĐ</div>
-                        <a th:href="@{'/mvc/trips/' + ${trip.id} + '/booking'}" class="btn btn-primary px-4 rounded-pill fw-semibold shadow-sm">
+                        <a th:href="@{'/mvc/trips/' + ${trip.tripId} + '/booking'}" class="btn btn-primary px-4 rounded-pill fw-semibold shadow-sm">
                             Chọn Ghế & Đặt Vé <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>
