@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(annotations = org.springframework.web.bind.annotation.RestController.class)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)

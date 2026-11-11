@@ -26,4 +26,20 @@ public class TripSearchRequest {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endTime;
+
+    public String getOrigin() {
+        return departurePoint;
+    }
+
+    public void setOrigin(String origin) {
+        this.departurePoint = origin;
+    }
+
+    public String getDestination() {
+        return arrivalPoint;
+    }
+
+    public void setDestination(String destination) {
+        this.arrivalPoint = destination;
+    }
 }
