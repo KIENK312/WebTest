@@ -150,3 +150,28 @@ BEGIN
     );
 END;
 GO
+
+-- 6. KHỞI TẠO LỊCH HẸN TƯ VẤN MẪU (WORKFLOW 4)
+IF NOT EXISTS (SELECT 1 FROM appointments WHERE appointment_code = 'HEN-20261112-DEMO')
+BEGIN
+    INSERT INTO appointments (
+        appointment_code, customer_name, customer_phone, customer_email,
+        appointment_date, time_slot, consultationType, status, notes,
+        assigned_staff, created_at, updated_at
+    )
+    VALUES (
+        'HEN-20261112-DEMO',
+        N'Nguyễn Trung Kiên',
+        '0901234567',
+        'trungkien@gmail.com',
+        DATEADD(day, 1, CAST(SYSDATETIME() AS DATE)),
+        N'09:15 - 10:15',
+        N'Tư vấn lộ trình & đặt vé đoàn',
+        'CONFIRMED',
+        N'Đoàn công tác 25 người tuyến Hà Nội - Đà Nẵng',
+        N'Trần Minh Tuấn - Trưởng phòng Điều hành',
+        SYSDATETIME(),
+        SYSDATETIME()
+    );
+END;
+GO

@@ -11,6 +11,7 @@ GO
 -- -----------------------------------------------------------------------------------------
 -- 0. XÓA BẢNG CŨ THEO THỨ TỰ PHỤ THUỘC (NẾU ĐÃ TỒN TẠI)
 -- -----------------------------------------------------------------------------------------
+DROP TABLE IF EXISTS appointments;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS tickets;
 DROP TABLE IF EXISTS seats;
@@ -273,6 +274,31 @@ CREATE TABLE payments (
 );
 GO
 
+-- -----------------------------------------------------------------------------------------
+-- 9. BẢNG: appointments (Lịch hẹn tư vấn trực tiếp - Workflow 4)
+-- Phục vụ nhu cầu khách hàng / đại lý muốn đặt lịch làm việc trực tiếp tại văn phòng
+-- -----------------------------------------------------------------------------------------
+CREATE TABLE appointments (
+    id BIGINT IDENTITY(1,1),
+    appointment_code NVARCHAR(50) NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    customer_phone NVARCHAR(20) NOT NULL,
+    customer_email NVARCHAR(100) NULL,
+    appointment_date DATE NOT NULL,
+    time_slot NVARCHAR(50) NOT NULL,
+    consultation_type NVARCHAR(100) NOT NULL,
+    status NVARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    notes NVARCHAR(500) NULL,
+    assigned_staff NVARCHAR(100) NULL,
+    created_at DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT PK_appointments PRIMARY KEY (id),
+    CONSTRAINT UQ_appointments_code UNIQUE (appointment_code),
+    CONSTRAINT CK_appointments_status CHECK (status IN ('PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'))
+);
+GO
+
 -- =========================================================================================
 -- ĐÁNH CHỈ MỤC (INDEXES) TỐI ƯU HÓA HIỆU NĂNG THEO YÊU CẦU
 -- =========================================================================================
@@ -293,6 +319,15 @@ GO
 CREATE NONCLUSTERED INDEX idx_maintenance_bus_time 
 ON maintenance_logs(bus_id, start_time, end_time)
 INCLUDE (status, maintenance_type);
+GO
+
+-- 4. Index cho bảng appointments: Tối ưu tra cứu lịch hẹn theo số điện thoại và khung giờ làm việc
+CREATE NONCLUSTERED INDEX idx_appointments_phone 
+ON appointments(customer_phone);
+GO
+
+CREATE NONCLUSTERED INDEX idx_appointments_date_slot 
+ON appointments(appointment_date, time_slot);
 GO
 
 -- =========================================================================================

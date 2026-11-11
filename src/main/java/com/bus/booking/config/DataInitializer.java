@@ -29,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final SeatRepository seatRepository;
     private final TripRepository tripRepository;
     private final TicketRepository ticketRepository;
+    private final AppointmentRepository appointmentRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -397,6 +398,37 @@ public class DataInitializer implements CommandLineRunner {
                         .build());
             }
             log.info("Đã khởi tạo vé mẫu thống kê cho hệ thống (Không gán vào tài khoản khách hàng cá nhân)");
+        }
+
+        // 9. Lịch hẹn tư vấn mẫu (Workflow 4: Appointment Consultation)
+        if (appointmentRepository.count() == 0) {
+            appointmentRepository.save(AppointmentEntity.builder()
+                    .appointmentCode("HEN-20261112-DEMO")
+                    .customerName("Nguyễn Trung Kiên")
+                    .customerPhone("0901234567")
+                    .customerEmail("trungkien@gmail.com")
+                    .appointmentDate(LocalDate.now().plusDays(1))
+                    .timeSlot("09:15 - 10:15")
+                    .consultationType("Tư vấn lộ trình & đặt vé đoàn")
+                    .status(AppointmentStatus.CONFIRMED)
+                    .notes("Đoàn công tác 25 người tuyến Hà Nội - Đà Nẵng")
+                    .assignedStaff("Trần Minh Tuấn - Trưởng phòng Điều hành")
+                    .build());
+
+            appointmentRepository.save(AppointmentEntity.builder()
+                    .appointmentCode("HEN-20261112-VIP2")
+                    .customerName("Trần Thị Hoa")
+                    .customerPhone("0987654321")
+                    .customerEmail("hoatran@example.com")
+                    .appointmentDate(LocalDate.now().plusDays(1))
+                    .timeSlot("14:45 - 15:45")
+                    .consultationType("Tư vấn chính sách hủy/đổi & hợp đồng")
+                    .status(AppointmentStatus.PENDING)
+                    .notes("Cần tư vấn hợp đồng thuê xe nguyên chuyến Sài Gòn - Đà Lạt")
+                    .assignedStaff("Chuyên viên tư vấn hợp đồng")
+                    .build());
+
+            log.info("Đã khởi tạo 2 lịch hẹn tư vấn mẫu (Workflow 4) thành công");
         }
 
         log.info("--- DataInitializer hoàn tất thành công! ---");

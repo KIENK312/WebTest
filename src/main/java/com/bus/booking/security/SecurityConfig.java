@@ -95,13 +95,14 @@ public class SecurityConfig {
                         // -----------------------------------------------------------------------------------------
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh (Vanilla JS frontend) và H2 console
+                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh, Thymeleaf MVC routes và H2 console
                         .requestMatchers(
                             "/", "/favicon.ico", "/error", "/h2-console/**",
                             "/*.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.svg",
                             "/index.html", "/login.html", "/my-tickets.html",
                             "/trips.html", "/seat-selection.html", "/payment.html",
-                            "/operator.html", "/admin.html", "/api.js"
+                            "/operator.html", "/admin.html", "/api.js",
+                            "/mvc/**", "/reservations/**", "/appointments/**"
                         ).permitAll()
 
                         // Public endpoints của ứng dụng
@@ -112,6 +113,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/tickets/hold").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tickets/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/tickets/cancel/**").permitAll()
+
+                        // Public endpoints cho Lịch hẹn tư vấn (Workflow 4)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/appointments/schedule").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/appointments/standard-slots").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/appointments/my").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/appointments/*").permitAll()
 
                         // Role CUSTOMER / Authenticated for tickets, users & payments
                         .requestMatchers("/api/v1/users/**").authenticated()
