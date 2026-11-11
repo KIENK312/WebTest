@@ -156,7 +156,7 @@ IF NOT EXISTS (SELECT 1 FROM appointments WHERE appointment_code = 'HEN-20261112
 BEGIN
     INSERT INTO appointments (
         appointment_code, customer_name, customer_phone, customer_email,
-        appointment_date, time_slot, consultationType, status, notes,
+        appointment_date, time_slot, consultation_type, status, notes,
         assigned_staff, created_at, updated_at
     )
     VALUES (
