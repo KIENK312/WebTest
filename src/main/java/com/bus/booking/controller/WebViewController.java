@@ -33,9 +33,17 @@ public class WebViewController {
     }
 
     /**
-     * Cổng thông tin Đặt vé du lịch & Đăng ký tư vấn (Trang chủ)
+     * Mặc định truy cập gốc (/) sẽ chuyển tiếp vào trang chủ bán vé xe khách chính thức (index.html)
      */
-    @GetMapping({"/", "/mvc"})
+    @GetMapping("/")
+    public String root() {
+        return "forward:/index.html";
+    }
+
+    /**
+     * Cổng thông tin MVC phụ (nếu cần xem kiểm thử)
+     */
+    @GetMapping("/mvc")
     public String index(Model model) {
         // Tải danh sách chuyến xe mặc định để hiển thị
         TripSearchRequest defaultSearch = TripSearchRequest.builder()
