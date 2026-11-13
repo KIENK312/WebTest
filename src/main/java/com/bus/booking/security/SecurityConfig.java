@@ -95,15 +95,15 @@ public class SecurityConfig {
                         // -----------------------------------------------------------------------------------------
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh, Thymeleaf MVC routes và H2 console
+                        // Cho phép truy cập công khai tất cả file HTML/JS tĩnh, SPA routes và H2 console
                         .requestMatchers(
                             "/", "/favicon.ico", "/error", "/h2-console/**",
                             "/*.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.svg",
                             "/index.html", "/login.html", "/my-tickets.html",
                             "/trips.html", "/seat-selection.html", "/payment.html",
-                            "/operator.html", "/admin.html", "/api.js",
+                            "/appointments.html", "/operator.html", "/admin.html", "/api.js",
                             "/trips", "/trips/**", "/my-tickets", "/login", "/seat-selection",
-                            "/mvc/**", "/reservations/**", "/appointments/**"
+                            "/appointments", "/payment", "/admin", "/operator"
                         ).permitAll()
 
                         // Public endpoints của ứng dụng
