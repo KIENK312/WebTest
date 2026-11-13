@@ -43,6 +43,11 @@ public class TransportStrategyFactory {
             if (limo != null) return limo;
         }
 
+        if (normalized.contains("TRAIN") || normalized.contains("TAU") || normalized.contains("HOA") || normalized.contains("DUONG_SAT")) {
+            TransportBookingStrategy train = strategyMap.get(TrainTicketStrategy.TYPE);
+            if (train != null) return train;
+        }
+
         return strategyMap.getOrDefault(normalized, defaultStrategy);
     }
 

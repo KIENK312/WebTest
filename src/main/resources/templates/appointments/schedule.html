@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng Ký Lịch Hẹn & Tem Số Tư Vấn – BusTicket Pro</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+
+  <!-- Header / Navbar -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-100 sticky top-0 z-40 shadow-xs transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        
+        <!-- Logo Brand -->
+        <a th:href="@{/}" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+            <i class="fa-solid fa-bus text-lg"></i>
+          </div>
+          <div>
+            <span class="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 bg-clip-text text-transparent">BusTicket</span>
+            <span class="hidden sm:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-md">Pro</span>
+            <p class="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Vé xe khách & Lịch hẹn tư vấn du lịch</p>
+          </div>
+        </a>
+
+        <!-- Main Nav Links -->
+        <nav class="hidden md:flex items-center gap-1">
+          <a th:href="@{/}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-house-chimney text-xs mr-1.5 opacity-70"></i>Trang chủ
+          </a>
+          <a th:href="@{/trips}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-route text-xs mr-1.5 opacity-70"></i>Tìm chuyến
+          </a>
+          <a th:href="@{/appointments}" class="px-3.5 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50/80 transition-all">
+            <i class="fa-solid fa-calendar-plus text-xs mr-1.5 text-orange-500"></i>Đăng ký lịch hẹn
+          </a>
+          <a th:href="@{/appointments/lookup}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-magnifying-glass text-xs mr-1.5 opacity-70"></i>Tra cứu Tem số
+          </a>
+          <a th:href="@{/my-tickets}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-ticket text-xs mr-1.5 opacity-70"></i>Vé của tôi
+          </a>
+        </nav>
+
+        <!-- Desk Badge -->
+        <div class="flex items-center gap-3">
+          <a th:href="@{/appointments/lookup}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition">
+            <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Tra Cứu Tem Số
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Header -->
+  <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white py-10 px-4 sm:px-6 relative overflow-hidden shadow-lg">
+    <div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+    <div class="max-w-4xl mx-auto relative z-10 text-center">
+      <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
+        <i class="fa-solid fa-ticket-simple"></i>
+        <span>Workflow 4: Appointment Consultation & PRG Pattern</span>
+      </span>
+      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Đăng Ký Lịch Hẹn & Nhận Tem Số Tư Vấn</h1>
+      <p class="mt-2 text-sm sm:text-base text-blue-100 max-w-2xl mx-auto">
+        Đặt hẹn trước với chuyên viên điều hành để được tư vấn lộ trình xe khách, chính sách hợp đồng đoàn, hoặc nhận hỗ trợ trực tiếp không cần chờ đợi.
+      </p>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
+
+    <!-- Flash Messages -->
+    <div th:if="${successMessage}" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold flex items-center gap-3 shadow-xs">
+      <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+      <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-bold flex items-center gap-3 shadow-xs">
+      <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg"></i>
+      <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Registration Form (PRG Step 1: POST to /appointments/schedule) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+      
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Thông Tin Đăng Ký Tư Vấn Trực Tiếp</h2>
+          <p class="text-xs text-slate-500">Mỗi khung giờ giới hạn tối đa 5 lượt tiếp nhận để phục vụ chu đáo nhất</p>
+        </div>
+      </div>
+
+      <form th:action="@{/appointments/schedule}" method="post" th:object="${appointmentRequest}" class="space-y-4">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Họ và tên quý khách <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+              <input type="text" th:field="*{customerName}" required placeholder="Nguyễn Văn A"
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Số điện thoại liên hệ <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+              <input type="tel" th:field="*{customerPhone}" required placeholder="0912345678" pattern="^(0|\+84)[0-9]{9,10}$"
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition font-medium">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Địa chỉ Email (Nhận tem số điện tử)</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <input type="email" th:field="*{customerEmail}" placeholder="nguyenvana@example.com"
+                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày hẹn tư vấn <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <i class="fa-solid fa-calendar-alt absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+              <input type="date" th:field="*{appointmentDate}" required
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Khung giờ tiếp nhận <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <i class="fa-solid fa-clock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+              <select th:field="*{timeSlot}" required
+                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition appearance-none bg-white font-medium">
+                <option th:each="slot : ${timeSlots}" th:value="${slot}" th:text="${slot}">09:15 - 10:15</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Nhu cầu tư vấn <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <i class="fa-solid fa-headset absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <select th:field="*{consultationType}" required
+                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition appearance-none bg-white font-medium">
+              <option value="Tư vấn lộ trình & đặt vé đoàn">Tư vấn lộ trình xe khách & đặt giữ chỗ đoàn khách</option>
+              <option value="Tư vấn điều kiện đổi/hủy vé & bảo hiểm">Tư vấn điều kiện đổi/hủy vé & quyền lợi bảo hiểm</option>
+              <option value="Hợp tác đối tác vận tải & ký gửi hàng">Hợp tác đại lý bán vé & ký gửi hàng hóa</option>
+              <option value="Yêu cầu dịch vụ xe Limousine riêng">Hợp đồng thuê trọn xe Limousine VIP du lịch</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Ghi chú bổ sung (nếu có)</label>
+          <textarea th:field="*{notes}" rows="3" placeholder="Ví dụ: Cần tư vấn đoàn 25 khách đi Đà Lạt vào cuối tuần..."
+                    class="w-full p-3.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition resize-none font-medium"></textarea>
+        </div>
+
+        <div class="pt-4">
+          <button type="submit"
+                  class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-sm shadow-xl shadow-blue-500/25 hover:scale-[1.01] active:scale-99 transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-ticket-simple text-base"></i>
+            <span>Xác Nhận & Cấp Tem Số Tư Vấn (PRG Form)</span>
+          </button>
+          <p class="text-[11px] text-slate-400 text-center mt-2">
+            Tuân thủ mô hình PRG (Post/Redirect/Get) chuẩn Spring MVC. Hệ thống tự động chuyển hướng sang trang Phiếu hẹn sau khi tạo thành công.
+          </p>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Quick Link -->
+    <div class="text-center pt-2">
+      <span class="text-xs text-slate-500">Đã đăng ký trước đó?</span>
+      <a th:href="@{/appointments/lookup}" class="text-xs text-blue-600 font-bold hover:underline ml-1">
+        Tra cứu tem số và tình trạng tiếp nhận tại đây &rarr;
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 mt-auto">
+    <p>&copy; 2026 BusTicket Pro - Hệ thống Quản lý Bán vé Xe khách & Lịch hẹn Tư vấn Du lịch. Hotline: 1900 6868</p>
+  </footer>
+
+</body>
+</html>

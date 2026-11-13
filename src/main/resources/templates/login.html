@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,13 +37,13 @@
     
     <!-- Brand Logo -->
     <div class="text-center mb-6">
-      <a href="index.html" class="inline-flex items-center gap-3 group">
+      <a th:href="@{/}" class="inline-flex items-center gap-3 group">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/30 group-hover:scale-105 transition-transform duration-300">
           <i class="fa-solid fa-bus text-2xl"></i>
         </div>
         <div class="text-left">
           <h1 class="text-2xl font-black text-white tracking-tight leading-none">BusTicket <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Pro</span></h1>
-          <p class="text-xs text-slate-400 font-medium mt-1">Hệ thống Đặt vé Xe khách Đa đối tác</p>
+          <p class="text-xs text-slate-400 font-medium mt-1">Hệ thống Đặt vé Xe khách & Lịch hẹn Tư vấn</p>
         </div>
       </a>
     </div>
@@ -86,8 +86,8 @@
                 class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
           <span class="text-base">👤</span>
           <div>
-            <div class="text-sky-300 font-extrabold leading-tight">Nguyễn Trung Kiên</div>
-            <div class="text-[10px] text-slate-300 font-normal">Tài khoản mới (0 vé)</div>
+            <div class="text-sky-300 font-extrabold leading-tight">Khách hàng</div>
+            <div class="text-[10px] text-slate-300 font-normal">Nguyễn Trung Kiên</div>
           </div>
         </button>
       </div>
@@ -189,22 +189,14 @@
     </div>
 
     <div class="text-center mt-5">
-      <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+      <a th:href="@{/}" class="text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
         <i class="fa-solid fa-arrow-left text-[10px]"></i> Quay lại trang chủ
       </a>
     </div>
 
   </div>
 
-  <!-- Scripts -->
-  <script src="api.js"></script>
   <script>
-    (function init() {
-      if (isLoggedIn()) {
-        window.location.href = 'index.html';
-      }
-    })();
-
     function switchTab(tab) {
       const isLogin = tab === 'login';
       document.getElementById('form-login').classList.toggle('hidden', !isLogin);
@@ -233,110 +225,104 @@
       document.getElementById('login-username').value = username;
       document.getElementById('login-password').value = password;
       switchTab('login');
-      showToast(`Đã điền tài khoản: ${username}`, 'info', 1500);
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 1500,
+          icon: 'info',
+          title: `Đã điền tài khoản: ${username}`
+        });
+      }
     }
 
-    // Đăng nhập
     async function handleLogin(event) {
       event.preventDefault();
       const username = document.getElementById('login-username').value.trim();
       const password = document.getElementById('login-password').value;
-
-      if (!username || !password) {
-        showToast('Vui lòng nhập tên đăng nhập và mật khẩu!', 'warning');
-        return;
-      }
 
       const btn = document.getElementById('btn-login');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...`;
 
       try {
-        const result = await fetchAPI('/auth/login', 'POST', {
-          usernameOrEmail: username,
-          password: password,
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usernameOrEmail: username, password: password })
         });
+        const result = await res.json();
 
-        const token = result.accessToken || result.token;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({
-          userId:       result.userId,
-          username:     result.username,
-          fullName:     result.fullName,
-          email:        result.email,
-          phone:        result.phone || result.phoneNumber || '',
-          role:         result.role,
-          operatorId:   result.operatorId,
-          operatorName: result.operatorName,
-          operatorCode: result.operatorCode,
-        }));
+        if (res.ok && result.success) {
+          const data = result.data;
+          const token = data.accessToken || data.token;
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify({
+            userId:       data.userId,
+            username:     data.username,
+            fullName:     data.fullName,
+            email:        data.email,
+            phone:        data.phone || data.phoneNumber || '',
+            role:         data.role,
+            operatorId:   data.operatorId,
+            operatorName: data.operatorName,
+            operatorCode: data.operatorCode,
+          }));
 
-        showSuccessModal(
-          `Chào mừng, ${result.fullName || result.username}!`,
-          'Đăng nhập thành công vào hệ sinh thái BusTicket Pro.',
-          () => {
-            const role = result.role || '';
-            if (role.includes('ADMIN')) window.location.href = 'admin.html';
-            else if (role.includes('OPERATOR')) window.location.href = 'operator.html';
-            else window.location.href = 'index.html';
-          }
-        );
+          Swal.fire({
+            icon: 'success',
+            title: `Chào mừng, ${data.fullName || data.username}!`,
+            text: 'Đăng nhập thành công vào hệ sinh thái BusTicket Pro.',
+            confirmButtonColor: '#ea580c',
+            confirmButtonText: 'Bắt đầu'
+          }).then(() => {
+            const role = data.role || '';
+            if (role.includes('ADMIN') || role.includes('OPERATOR')) {
+              window.location.href = '/appointments/lookup';
+            } else {
+              window.location.href = '/';
+            }
+          });
 
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Đăng nhập thất bại',
+            text: result.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+            confirmButtonColor: '#ef4444'
+          });
+        }
       } catch (err) {
-        // Modal lỗi đã xử lý bởi fetchAPI
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi máy chủ',
+          text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.',
+          confirmButtonColor: '#ef4444'
+        });
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>Đăng Nhập</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
       }
     }
 
-    // Đăng ký tài khoản mới với đầy đủ kiểm tra tính hợp lệ (Validation)
     async function handleRegister(event) {
       event.preventDefault();
-      const fullName = document.getElementById('reg-fullname')?.value.trim() || '';
-      const email    = document.getElementById('reg-email')?.value.trim() || '';
-      const phone    = document.getElementById('reg-phone')?.value.trim() || '';
-      const username = document.getElementById('reg-username')?.value.trim() || '';
-      const password = document.getElementById('reg-password')?.value || '';
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const phone    = document.getElementById('reg-phone').value.trim();
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
       const btn      = document.getElementById('btn-register');
 
-      // Validation Client-side chặt chẽ
-      if (!fullName) {
-        showToast('Vui lòng nhập họ và tên của bạn!', 'warning');
-        document.getElementById('reg-fullname')?.focus();
-        return;
-      }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showToast('Vui lòng nhập địa chỉ email hợp lệ (vd: ban@gmail.com)!', 'warning');
-        document.getElementById('reg-email')?.focus();
-        return;
-      }
-      if (!phone) {
-        showToast('Số điện thoại không được để trống!', 'warning');
-        document.getElementById('reg-phone')?.focus();
-        return;
-      }
-      // Định dạng số điện thoại Việt Nam chuẩn (10 chữ số)
-      if (!/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone)) {
-        showToast('Số điện thoại không đúng định dạng (10 số, bắt đầu bằng 03, 05, 07, 08, 09)!', 'warning');
-        document.getElementById('reg-phone')?.focus();
-        return;
-      }
-      if (!username || username.length < 4) {
-        showToast('Tên đăng nhập phải có ít nhất 4 ký tự!', 'warning');
-        document.getElementById('reg-username')?.focus();
-        return;
-      }
-      if (!password || password.length < 6) {
-        showToast('Mật khẩu phải có ít nhất 6 ký tự!', 'warning');
-        document.getElementById('reg-password')?.focus();
-        return;
-      }
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng ký...`;
 
-      await withButtonLoading(btn, async () => {
-        try {
-          // Gửi đồng thời cả 'phone' và 'phoneNumber' để đảm bảo tương thích 100% với Backend
-          await fetchAPI('/auth/register', 'POST', {
+      try {
+        const res = await fetch('/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             fullName: fullName,
             email: email,
             phone: phone,
@@ -344,23 +330,40 @@
             username: username,
             password: password,
             roleName: 'ROLE_CUSTOMER'
+          })
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Đăng ký thành công! 🎉',
+            text: `Chào mừng ${fullName}! Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập ngay để đặt vé!`,
+            confirmButtonColor: '#10b981'
+          }).then(() => {
+            document.getElementById('login-username').value = username;
+            document.getElementById('login-password').value = password;
+            switchTab('login');
           });
-
-          showSuccessModal(
-            'Đăng ký tài khoản thành công! 🎉',
-            `Chào mừng ${fullName}! Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập ngay để bắt đầu đặt vé xe!`,
-            () => {
-              document.getElementById('login-username').value = username;
-              document.getElementById('login-password').value = password;
-              switchTab('login');
-              showToast('Đã điền sẵn tài khoản của bạn vào form đăng nhập!', 'success', 2500);
-            }
-          );
-
-        } catch (err) {
-          // Lỗi đã được hiển thị qua modal sang trọng của fetchAPI
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Đăng ký thất bại',
+            text: result.message || 'Không thể tạo tài khoản. Vui lòng kiểm tra lại thông tin.',
+            confirmButtonColor: '#ef4444'
+          });
         }
-      }, 'Đang đăng ký...');
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi máy chủ',
+          text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.',
+          confirmButtonColor: '#ef4444'
+        });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Tạo Tài Khoản Mới</span> <i class="fa-solid fa-user-check text-xs"></i>`;
+      }
     }
   </script>
 </body>
