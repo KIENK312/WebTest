@@ -172,57 +172,80 @@
       <aside class="lg:col-span-5 xl:col-span-4 sticky top-24 space-y-5">
         <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-lg">
           
-          <h3 class="text-base font-extrabold text-slate-900 pb-3 border-b border-slate-100 mb-4 flex items-center justify-between">
-            <span>Thông tin đặt vé</span>
-            <span id="trip-badge" class="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">Chuyến xe</span>
-          </h3>
+          <!-- Badge + tiêu đề -->
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-ticket text-orange-500"></i> Thông tin đặt vé
+            </h3>
+            <span id="trip-badge" class="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">1 Chuyến xe</span>
+          </div>
 
-          <!-- Khung Thông tin chi tiết chuyến xe nổi bật -->
-          <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/80 mb-5 space-y-3">
-            
-            <!-- Tuyến đường đi -> đến -->
-            <div>
-              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tuyến đường:</span>
-              <div class="flex items-center gap-2 text-sm sm:text-base font-black text-slate-900">
-                <span id="sum-origin" class="text-blue-700">Đang tải...</span>
-                <i class="fa-solid fa-arrow-right-long text-slate-400 text-xs"></i>
-                <span id="sum-destination" class="text-emerald-600">Đang tải...</span>
+          <!-- ===== THÔNG TIN CHUYẾN XE NỔI BẬT (góc phải) ===== -->
+          <div class="rounded-2xl overflow-hidden border border-blue-200/70 mb-5 shadow-sm">
+
+            <!-- Header gradient xanh -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center gap-2">
+              <i class="fa-solid fa-route text-white/90 text-sm"></i>
+              <span class="text-white font-black text-sm tracking-wide">Tuyến đường</span>
+            </div>
+
+            <!-- Tuyến đường lớn: Từ → Đến -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50/40 px-4 py-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-center flex-1">
+                  <div class="w-8 h-8 rounded-full bg-blue-100 border-2 border-blue-400 flex items-center justify-center mx-auto mb-1">
+                    <i class="fa-solid fa-location-dot text-blue-600 text-xs"></i>
+                  </div>
+                  <span id="sum-origin" class="text-blue-700 font-black text-sm block leading-tight">Đang tải...</span>
+                  <span class="text-[10px] text-blue-500 font-semibold">Điểm đi</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5 px-1">
+                  <i class="fa-solid fa-bus text-orange-500 text-lg"></i>
+                  <i class="fa-solid fa-arrow-right text-slate-300 text-xs"></i>
+                </div>
+                <div class="text-center flex-1">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-1">
+                    <i class="fa-solid fa-flag-checkered text-emerald-600 text-xs"></i>
+                  </div>
+                  <span id="sum-destination" class="text-emerald-700 font-black text-sm block leading-tight">Đang tải...</span>
+                  <span class="text-[10px] text-emerald-500 font-semibold">Điểm đến</span>
+                </div>
               </div>
             </div>
 
-            <!-- Giờ xuất bến & giờ đến -->
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-xs">
-              <div>
-                <span class="text-slate-400 font-semibold block text-[10px] uppercase">Khởi hành:</span>
-                <strong id="sum-dep-time" class="text-slate-800 font-bold block text-sm text-blue-600">--:--</strong>
-                <span id="sum-dep-date" class="text-[11px] text-slate-500 font-medium">--/--/----</span>
+            <!-- Giờ khởi hành & đến -->
+            <div class="bg-white px-4 py-3 grid grid-cols-2 gap-3 border-t border-slate-100">
+              <div class="bg-blue-50 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">🕐 Khởi hành</span>
+                <strong id="sum-dep-time" class="text-blue-700 font-black text-lg block leading-tight">--:--</strong>
+                <span id="sum-dep-date" class="text-[10px] text-slate-500 font-medium">--/--/----</span>
               </div>
-              <div class="text-right">
-                <span class="text-slate-400 font-semibold block text-[10px] uppercase">Dự kiến đến:</span>
-                <strong id="sum-arr-time" class="text-slate-800 font-bold block text-sm text-emerald-600">--:--</strong>
-                <span id="sum-arr-date" class="text-[11px] text-slate-500 font-medium">--/--/----</span>
+              <div class="bg-emerald-50 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">🏁 Đến nơi</span>
+                <strong id="sum-arr-time" class="text-emerald-700 font-black text-lg block leading-tight">--:--</strong>
+                <span id="sum-arr-date" class="text-[10px] text-slate-500 font-medium">--/--/----</span>
               </div>
             </div>
 
-            <!-- Nhà xe, Biển số xe & Giá vé cơ sở -->
-            <div class="pt-2 border-t border-slate-200/60 space-y-1.5 text-xs">
-              <div class="flex justify-between items-center">
+            <!-- Nhà xe, loại xe, giá vé -->
+            <div class="bg-white px-4 pb-3 pt-1 border-t border-slate-100 space-y-1.5 text-xs">
+              <div class="flex justify-between items-center py-1 border-b border-slate-50">
                 <span class="text-slate-500 font-medium flex items-center gap-1.5">
-                  <i class="fa-solid fa-bus text-orange-500"></i> Nhà xe:
+                  <i class="fa-solid fa-building text-orange-400"></i> Nhà xe:
                 </span>
                 <strong id="sum-operator" class="text-slate-800 font-bold">—</strong>
               </div>
-              <div class="flex justify-between items-center">
+              <div class="flex justify-between items-center py-1 border-b border-slate-50">
                 <span class="text-slate-500 font-medium flex items-center gap-1.5">
-                  <i class="fa-solid fa-van-shuttle text-indigo-500"></i> Phương tiện:
+                  <i class="fa-solid fa-van-shuttle text-indigo-400"></i> Loại xe:
                 </span>
                 <strong id="sum-bus-type" class="text-slate-800 font-semibold">—</strong>
               </div>
-              <div class="flex justify-between items-center">
+              <div class="flex justify-between items-center py-1">
                 <span class="text-slate-500 font-medium flex items-center gap-1.5">
-                  <i class="fa-solid fa-tag text-amber-500"></i> Giá vé mỗi ghế:
+                  <i class="fa-solid fa-tag text-amber-400"></i> Giá/ghế:
                 </span>
-                <strong id="sum-base-price" class="text-orange-600 font-black">—</strong>
+                <strong id="sum-base-price" class="text-orange-600 font-black text-sm">—</strong>
               </div>
             </div>
 
@@ -456,49 +479,63 @@
         `;
       }
 
-      // Sơ đồ chuẩn 7 hàng theo hình mẫu người dùng yêu cầu:
-      // Hàng 1 (Đầu xe): [Trống/Cửa lên], [Lối đi], Ghế 01
-      // Hàng 2: Ghế 02, Ghế 03, Ghế 04
-      // Hàng 3: Ghế 05, Ghế 06, Ghế 07
-      // Hàng 4: Ghế 08, Ghế 09, Ghế 10
-      // Hàng 5: Ghế 11, Ghế 12, Ghế 13
-      // Hàng 6: Ghế 14, Ghế 15, Ghế 16
-      // Hàng 7 (Cuối xe): Ghế 17, Ghế 19, Ghế 21 (3 cột thẳng hàng, 2 lối đi ở giữa)
-      const rowsData = [
+      // Sơ đồ chuẩn 7 hàng theo hình mẫu:
+      // Hàng 1 (Đầu xe / Cửa lên): [null][null][01]  → chỉ 1 ghế góc phải
+      // Hàng 2: 02, 03, 04
+      // Hàng 3: 05, 06, 07
+      // Hàng 4: 08, 09, 10
+      // Hàng 5: 11, 12, 13
+      // Hàng 6: 14, 15, 16
+      // Hàng 7 (Cuối xe): 17, 18, 19, 20, 21 — 5 ghế ngang (hàng cuối đặc biệt)
+      //   Tầng 1 (A): A17 A18 A19 A20 A21
+      //   Tầng 2 (B): B17 B18 B19 B20 B21
+
+      // === Hàng 1–6: grid 3 cột ===
+      const mainRows = [
         [null, null, `${prefix}01`],
         [`${prefix}02`, `${prefix}03`, `${prefix}04`],
         [`${prefix}05`, `${prefix}06`, `${prefix}07`],
         [`${prefix}08`, `${prefix}09`, `${prefix}10`],
         [`${prefix}11`, `${prefix}12`, `${prefix}13`],
         [`${prefix}14`, `${prefix}15`, `${prefix}16`],
-        [`${prefix}17`, `${prefix}19`, `${prefix}21`]
       ];
 
       let html = `<div class="space-y-3 sm:space-y-4 max-w-sm sm:max-w-md mx-auto">`;
 
-      rowsData.forEach(row => {
+      // Render hàng 1–6
+      mainRows.forEach(row => {
         html += `<div class="grid grid-cols-3 gap-6 sm:gap-10 justify-items-center">`;
         row.forEach(code => {
           if (code) {
             html += renderSeat(code);
           } else {
-            // Lối đi / khoảng trống
-            html += `
-              <div class="w-14 sm:w-16 h-16 sm:h-18 flex items-center justify-center">
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
-              </div>
-            `;
+            html += `<div class="w-14 sm:w-16 h-16 sm:h-18 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+            </div>`;
           }
         });
         html += `</div>`;
       });
 
-      // Nếu có thêm ghế ngoài các mã chuẩn, render bổ sung ở dưới
+      // === Hàng 7 (Cuối xe): 5 ghế ngang ===
+      const lastRowCodes = [`${prefix}17`, `${prefix}18`, `${prefix}19`, `${prefix}20`, `${prefix}21`];
+      const lastRowSeats = lastRowCodes.filter(c => seatMap[c]);
+      if (lastRowSeats.length > 0) {
+        html += `<div class="pt-3 mt-1 border-t-2 border-dashed border-slate-200">
+          <span class="block text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">— Hàng cuối —</span>
+          <div class="flex justify-center gap-2 sm:gap-3 flex-wrap">`;
+        lastRowCodes.forEach(code => {
+          html += renderSeat(code);
+        });
+        html += `</div></div>`;
+      }
+
+      // Ghế ngoài mã chuẩn (nếu có thêm)
       const standardCodes = new Set([
         `${prefix}01`, `${prefix}02`, `${prefix}03`, `${prefix}04`, `${prefix}05`, `${prefix}06`,
         `${prefix}07`, `${prefix}08`, `${prefix}09`, `${prefix}10`, `${prefix}11`, `${prefix}12`,
-        `${prefix}13`, `${prefix}14`, `${prefix}15`, `${prefix}16`, `${prefix}17`, `${prefix}19`,
-        `${prefix}21`
+        `${prefix}13`, `${prefix}14`, `${prefix}15`, `${prefix}16`,
+        `${prefix}17`, `${prefix}18`, `${prefix}19`, `${prefix}20`, `${prefix}21`
       ]);
       const extraSeats = seats.filter(s => !standardCodes.has(s.seatNumber));
       if (extraSeats.length > 0) {
