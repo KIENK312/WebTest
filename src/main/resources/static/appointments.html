@@ -556,15 +556,33 @@
                 </button>
                 ${item.status === 'PENDING' ? `
                   <button onclick="updateAppointmentStatus(${item.id}, 'CONFIRMED')" class="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 transition" title="Bắt đầu tiếp nhận tư vấn">
-                    <i class="fa-solid fa-check"></i>
+                    <i class="fa-solid fa-headset"></i>
                     <span>Tiếp nhận</span>
+                  </button>
+                  <button onclick="confirmCancelAppointment(${item.id})" class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-[11px] flex items-center gap-1 transition" title="Khách vắng mặt / Hủy lịch">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>Hủy</span>
                   </button>
                 ` : ''}
                 ${item.status === 'CONFIRMED' ? `
-                  <button onclick="updateAppointmentStatus(${item.id}, 'COMPLETED')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 transition" title="Đã hoàn tất tư vấn">
+                  <button onclick="updateAppointmentStatus(${item.id}, 'COMPLETED')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 transition" title="Đã hoàn tất buổi tư vấn">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>Hoàn tất</span>
                   </button>
+                  <button onclick="confirmCancelAppointment(${item.id})" class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-[11px] flex items-center gap-1 transition" title="Khách đổi ý / Hủy lịch">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>Hủy</span>
+                  </button>
+                ` : ''}
+                ${item.status === 'COMPLETED' ? `
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-extrabold text-[10px]" title="Buổi tư vấn đã hoàn thành, trạng thái khóa vĩnh viễn">
+                    <i class="fa-solid fa-lock text-[9px]"></i> Đã hoàn thành (Khóa)
+                  </span>
+                ` : ''}
+                ${item.status === 'CANCELLED' ? `
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px]" title="Lịch hẹn đã hủy bỏ, trạng thái khóa">
+                    <i class="fa-solid fa-ban text-[9px]"></i> Đã hủy
+                  </span>
                 ` : ''}
               </div>
             </td>
@@ -626,6 +644,23 @@
       } catch (err) {
         showToast('Không thể cập nhật trạng thái', 'error');
       }
+    }
+
+    function confirmCancelAppointment(id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Xác nhận hủy lịch hẹn?',
+        text: 'Một khi đã hủy bỏ, phiếu Tem số này sẽ bị đóng vĩnh viễn và không thể mở lại!',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Đồng ý hủy',
+        cancelButtonText: 'Quay lại'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          updateAppointmentStatus(id, 'CANCELLED');
+        }
+      });
     }
 
     // ----------------------------------------------------------------

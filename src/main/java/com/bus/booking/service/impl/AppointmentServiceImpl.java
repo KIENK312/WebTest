@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +47,19 @@ public class AppointmentServiceImpl implements AppointmentService {
         // 1. Kiểm tra ngày hẹn không nằm trong quá khứ
         if (request.getAppointmentDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Ngày hẹn tư vấn không thể ở trong quá khứ.");
+        }
+
+        // Nếu đặt hẹn trong ngày hôm nay, kiểm tra xem khung giờ đã kết thúc chưa
+        if (request.getAppointmentDate().isEqual(LocalDate.now())) {
+            try {
+                String slotEnd = request.getTimeSlot().split("-")[1].trim();
+                LocalTime endTime = LocalTime.parse(slotEnd);
+                if (LocalTime.now().isAfter(endTime)) {
+                    throw new IllegalArgumentException("Khung giờ '" + request.getTimeSlot() + "' hôm nay đã kết thúc thời gian tiếp nhận. Vui lòng chọn khung giờ tiếp theo hoặc ngày mai!");
+                }
+            } catch (IllegalArgumentException ex) {
+                throw ex;
+            } catch (Exception ignored) {}
         }
 
         // 2. Kiểm tra khung giờ hợp lệ
@@ -129,17 +143,38 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public AppointmentResponseDto updateStatus(Long id, AppointmentStatus status, String assignedStaff) {
+    public AppointmentResponseDto updateStatus(Long id, AppointmentStatus newStatus, String assignedStaff) {
         AppointmentEntity entity = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lịch hẹn với ID: " + id));
 
-        entity.setStatus(status);
+        AppointmentStatus currentStatus = entity.getStatus();
+
+        // 1. Khóa hoàn toàn nếu đã ở trạng thái kết thúc (Terminal State / Bất biến)
+        if (currentStatus == AppointmentStatus.COMPLETED) {
+            throw new IllegalStateException("Lịch hẹn mã " + entity.getAppointmentCode() + " đã HOÀN THÀNH. Trạng thái đã khóa, không được phép hiệu chỉnh thêm.");
+        }
+        if (currentStatus == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("Lịch hẹn mã " + entity.getAppointmentCode() + " đã HỦY BỎ. Không thể thay đổi trạng thái nữa.");
+        }
+
+        // 2. Kiểm tra chu trình chuyển đổi trạng thái hợp lệ (State Machine Transition)
+        if (currentStatus == AppointmentStatus.PENDING) {
+            if (newStatus != AppointmentStatus.CONFIRMED && newStatus != AppointmentStatus.CANCELLED) {
+                throw new IllegalArgumentException("Từ trạng thái 'Chờ tiếp nhận', chỉ được chuyển sang 'Đang tiếp nhận' hoặc 'Hủy'.");
+            }
+        } else if (currentStatus == AppointmentStatus.CONFIRMED) {
+            if (newStatus != AppointmentStatus.COMPLETED && newStatus != AppointmentStatus.CANCELLED) {
+                throw new IllegalArgumentException("Từ trạng thái 'Đang tiếp nhận', chỉ được chuyển sang 'Hoàn thành' hoặc 'Hủy'.");
+            }
+        }
+
+        entity.setStatus(newStatus);
         if (assignedStaff != null && !assignedStaff.isBlank()) {
             entity.setAssignedStaff(assignedStaff);
         }
 
         AppointmentEntity updated = appointmentRepository.save(entity);
-        log.info("Cập nhật trạng thái lịch hẹn ID={} sang: {}", id, status);
+        log.info("Cập nhật trạng thái lịch hẹn ID={} từ {} sang: {}", id, currentStatus, newStatus);
         return mapToDto(updated);
     }
 
