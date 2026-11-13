@@ -1,116 +1,368 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập Hệ Thống - Travel Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-</head>
-<body class="bg-light">
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
-            <i class="bi bi-compass-fill fs-3"></i>
-            <span>BUSTICKET PRO</span>
-        </a>
-    </div>
-</nav>
-
-<div class="container py-5" style="max-width: 500px;">
-    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-        <div class="text-center mb-4">
-            <div class="badge bg-primary-subtle text-primary p-3 rounded-circle mb-3">
-                <i class="bi bi-shield-lock-fill fs-2"></i>
-            </div>
-            <h4 class="fw-bold text-dark">Đăng Nhập Hệ Thống</h4>
-            <p class="text-muted small">Phân quyền đa vai trò Spring Security (RBAC)</p>
-        </div>
-
-        <div id="loginAlert" class="alert alert-danger d-none rounded-3 py-2 small" role="alert"></div>
-
-        <form id="loginForm">
-            <div class="mb-3">
-                <label class="form-label text-secondary fw-semibold">Tên đăng nhập (Username)</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                    <input type="text" class="form-control" id="username" placeholder="Nhập username" required>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label text-secondary fw-semibold">Mật khẩu (Password)</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
-                    <input type="password" class="form-control" id="password" placeholder="Nhập mật khẩu" required>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold shadow-sm mb-3" id="btnLogin">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập
-            </button>
-        </form>
-
-        <!-- Quick Demo Credentials Box -->
-        <div class="bg-light p-3 rounded-3 small mt-3">
-            <div class="fw-bold text-secondary mb-2"><i class="bi bi-info-circle me-1"></i>Tài khoản demo hệ thống:</div>
-            <ul class="list-unstyled mb-0 text-muted" style="font-size: 0.85rem;">
-                <li class="mb-1">• <strong>Admin:</strong> <code>admin</code> / <code>Admin@123</code></li>
-                <li class="mb-1">• <strong>Nhà xe:</strong> <code>operator_futa</code> / <code>Operator@123</code></li>
-                <li>• <strong>Khách hàng:</strong> <code>trungkien</code> / <code>Customer@123</code></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-        const alertBox = document.getElementById('loginAlert');
-        const btn = document.getElementById('btnLogin');
-
-        alertBox.classList.add('d-none');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xác thực...';
-
-        try {
-            const res = await fetch('/api/v1/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                // Lưu token
-                localStorage.setItem('token', data.data.accessToken);
-                localStorage.setItem('user', JSON.stringify(data.data));
-
-                const role = data.data.role;
-                if (role === 'ROLE_ADMIN') {
-                    window.location.href = '/admin.html';
-                } else if (role === 'ROLE_OPERATOR') {
-                    window.location.href = '/operator.html';
-                } else {
-                    window.location.href = '/';
-                }
-            } else {
-                alertBox.innerText = data.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.';
-                alertBox.classList.remove('d-none');
-            }
-        } catch (err) {
-            alertBox.innerText = 'Lỗi kết nối máy chủ. Vui lòng thử lại sau.';
-            alertBox.classList.remove('d-none');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập';
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng Nhập / Đăng Ký – BusTicket Pro</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
         }
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+      }
+    }
+  </script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 text-slate-800 font-sans antialiased flex items-center justify-center p-4 selection:bg-orange-500 selection:text-white">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-md my-8">
+    
+    <!-- Brand Logo -->
+    <div class="text-center mb-6">
+      <a th:href="@{/}" class="inline-flex items-center gap-3 group">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/30 group-hover:scale-105 transition-transform duration-300">
+          <i class="fa-solid fa-bus text-2xl"></i>
+        </div>
+        <div class="text-left">
+          <h1 class="text-2xl font-black text-white tracking-tight leading-none">BusTicket <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Pro</span></h1>
+          <p class="text-xs text-slate-400 font-medium mt-1">Hệ thống Đặt vé Xe khách & Lịch hẹn Tư vấn</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Quick 1-Click Demo Accounts Card -->
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 sm:p-5 text-white mb-5 shadow-2xl">
+      <div class="flex items-center gap-2 text-xs font-bold text-amber-300 mb-2.5">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Đăng nhập 1-Click (Tài khoản mẫu):</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+        <button type="button" onclick="fillDemo('admin', 'Admin@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">👑</span>
+          <div>
+            <div class="text-amber-300 font-extrabold leading-tight">Admin</div>
+            <div class="text-[10px] text-slate-300 font-normal">Quản trị viên</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('operator_futa', 'Operator@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">🚌</span>
+          <div>
+            <div class="text-orange-300 font-extrabold leading-tight">Phương Trang</div>
+            <div class="text-[10px] text-slate-300 font-normal">FUTA Bus Lines</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('operator_hoanglong', 'Operator@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">🚌</span>
+          <div>
+            <div class="text-rose-300 font-extrabold leading-tight">Hoàng Long</div>
+            <div class="text-[10px] text-slate-300 font-normal">Hoàng Long Bus</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="fillDemo('customer', 'Customer@123')"
+                class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition flex items-center gap-2">
+          <span class="text-base">👤</span>
+          <div>
+            <div class="text-sky-300 font-extrabold leading-tight">Khách hàng</div>
+            <div class="text-[10px] text-slate-300 font-normal">Nguyễn Trung Kiên</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+      
+      <!-- Tabs switch -->
+      <div class="flex border-b border-slate-100">
+        <button id="tab-login" onclick="switchTab('login')"
+                class="flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-orange-600 text-orange-600 bg-orange-50/50 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-lock text-xs"></i> Đăng nhập
+        </button>
+        <button id="tab-register" onclick="switchTab('register')"
+                class="flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-orange-600 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-user-plus text-xs"></i> Đăng ký
+        </button>
+      </div>
+
+      <!-- Form Đăng nhập -->
+      <div id="form-login" class="p-6 sm:p-8">
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên đăng nhập hoặc Email</label>
+            <div class="relative">
+              <input id="login-username" type="text" placeholder="VD: admin hoặc customer" required
+                     class="w-full h-11 pl-10 pr-4 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <i class="fa-regular fa-user text-xs"></i>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Mật khẩu</label>
+            <div class="relative">
+              <input id="login-password" type="password" placeholder="Nhập mật khẩu..." required
+                     class="w-full h-11 pl-10 pr-10 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <i class="fa-solid fa-key text-xs"></i>
+              </div>
+              <button type="button" onclick="togglePassword('login-password', this)"
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-login"
+                  class="w-full h-12 mt-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all hover:scale-[1.01] active:scale-99 flex items-center justify-center gap-2">
+            <span>Đăng Nhập</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Form Đăng ký -->
+      <div id="form-register" class="p-6 sm:p-8 hidden">
+        <form onsubmit="handleRegister(event)" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên</label>
+            <input id="reg-fullname" type="text" placeholder="Nguyễn Văn A" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+            <input id="reg-email" type="email" placeholder="email@example.com" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Số điện thoại</label>
+            <input id="reg-phone" type="tel" placeholder="0901234567" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tên đăng nhập</label>
+            <input id="reg-username" type="text" placeholder="username123" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Mật khẩu</label>
+            <input id="reg-password" type="password" placeholder="Ít nhất 8 ký tự, có số & chữ hoa" required
+                   class="w-full h-10 px-3.5 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+          </div>
+
+          <button type="submit" id="btn-register"
+                  class="w-full h-11 mt-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+            <span>Tạo Tài Khoản Mới</span>
+            <i class="fa-solid fa-user-check text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <div class="text-center mt-5">
+      <a th:href="@{/}" class="text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-arrow-left text-[10px]"></i> Quay lại trang chủ
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-register').classList.toggle('hidden', isLogin);
+
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg   = document.getElementById('tab-register');
+
+      if (isLogin) {
+        tabLogin.className = 'flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-orange-600 text-orange-600 bg-orange-50/50 flex items-center justify-center gap-1.5';
+        tabReg.className   = 'flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-orange-600 flex items-center justify-center gap-1.5';
+      } else {
+        tabReg.className   = 'flex-1 py-4 text-center font-extrabold text-xs sm:text-sm transition border-b-2 border-emerald-600 text-emerald-600 bg-emerald-50/50 flex items-center justify-center gap-1.5';
+        tabLogin.className = 'flex-1 py-4 text-center font-bold text-xs sm:text-sm transition text-slate-400 hover:text-emerald-600 flex items-center justify-center gap-1.5';
+      }
+    }
+
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      btn.innerHTML = isPass ? '<i class="fa-regular fa-eye-slash text-xs"></i>' : '<i class="fa-regular fa-eye text-xs"></i>';
+    }
+
+    function fillDemo(username, password) {
+      document.getElementById('login-username').value = username;
+      document.getElementById('login-password').value = password;
+      switchTab('login');
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 1500,
+          icon: 'info',
+          title: `Đã điền tài khoản: ${username}`
+        });
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...`;
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usernameOrEmail: username, password: password })
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          const data = result.data;
+          const token = data.accessToken || data.token;
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify({
+            userId:       data.userId,
+            username:     data.username,
+            fullName:     data.fullName,
+            email:        data.email,
+            phone:        data.phone || data.phoneNumber || '',
+            role:         data.role,
+            operatorId:   data.operatorId,
+            operatorName: data.operatorName,
+            operatorCode: data.operatorCode,
+          }));
+
+          Swal.fire({
+            icon: 'success',
+            title: `Chào mừng, ${data.fullName || data.username}!`,
+            text: 'Đăng nhập thành công vào hệ sinh thái BusTicket Pro.',
+            confirmButtonColor: '#ea580c',
+            confirmButtonText: 'Bắt đầu'
+          }).then(() => {
+            const role = data.role || '';
+            if (role.includes('ADMIN')) window.location.href = '/admin.html';
+            else if (role.includes('OPERATOR')) window.location.href = '/operator.html';
+            else window.location.href = '/';
+          });
+
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Đăng nhập thất bại',
+            text: result.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi máy chủ',
+          text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.',
+          confirmButtonColor: '#ef4444'
+        });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Đăng Nhập</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
+      }
+    }
+
+    async function handleRegister(event) {
+      event.preventDefault();
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const phone    = document.getElementById('reg-phone').value.trim();
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const btn      = document.getElementById('btn-register');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng ký...`;
+
+      try {
+        const res = await fetch('/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            phoneNumber: phone,
+            username: username,
+            password: password,
+            roleName: 'ROLE_CUSTOMER'
+          })
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Đăng ký thành công! 🎉',
+            text: `Chào mừng ${fullName}! Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập ngay để đặt vé!`,
+            confirmButtonColor: '#10b981'
+          }).then(() => {
+            document.getElementById('login-username').value = username;
+            document.getElementById('login-password').value = password;
+            switchTab('login');
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Đăng ký thất bại',
+            text: result.message || 'Không thể tạo tài khoản. Vui lòng kiểm tra lại thông tin.',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi máy chủ',
+          text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.',
+          confirmButtonColor: '#ef4444'
+        });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Tạo Tài Khoản Mới</span> <i class="fa-solid fa-user-check text-xs"></i>`;
+      }
+    }
+  </script>
 </body>
 </html>
