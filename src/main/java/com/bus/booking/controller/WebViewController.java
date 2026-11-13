@@ -33,19 +33,10 @@ public class WebViewController {
     }
 
     /**
-     * Mặc định truy cập gốc (/) sẽ chuyển tiếp vào trang chủ bán vé xe khách chính thức (index.html)
+     * Trang chủ chính thức kết hợp Spring Web MVC & Thymeleaf
      */
-    @GetMapping("/")
-    public String root() {
-        return "forward:/index.html";
-    }
-
-    /**
-     * Cổng thông tin MVC phụ (nếu cần xem kiểm thử)
-     */
-    @GetMapping("/mvc")
+    @GetMapping({"/", "/index", "/mvc"})
     public String index(Model model) {
-        // Tải danh sách chuyến xe mặc định để hiển thị
         TripSearchRequest defaultSearch = TripSearchRequest.builder()
                 .departureDate(LocalDate.now().plusDays(1))
                 .build();
@@ -56,9 +47,9 @@ public class WebViewController {
     }
 
     /**
-     * Tra cứu danh sách chuyến xe
+     * Tra cứu danh sách chuyến xe khách du lịch
      */
-    @GetMapping("/mvc/trips")
+    @GetMapping({"/trips", "/mvc/trips"})
     public String searchTrips(
             @ModelAttribute TripSearchRequest searchRequest,
             Model model) {
@@ -74,22 +65,28 @@ public class WebViewController {
     }
 
     /**
-     * Xem sơ đồ ghế & Điền thông tin đặt vé cho chuyến đi
+     * Xem sơ đồ 38 ghế 2 tầng & Biểu mẫu giữ chỗ (PRG Step 1)
      */
-    @GetMapping("/mvc/trips/{id}/booking")
+    @GetMapping({"/trips/{id}/booking", "/mvc/trips/{id}/booking", "/seat-selection"})
     public String bookingPage(
-            @PathVariable("id") Long tripId,
+            @PathVariable(value = "id", required = false) Long tripId,
+            @RequestParam(value = "tripId", required = false) Long paramTripId,
             Model model) {
 
-        TripSearchResponse trip = tripService.getTripById(tripId);
-        List<TripSeatResponse> seats = tripService.getTripSeats(tripId);
+        Long targetTripId = tripId != null ? tripId : paramTripId;
+        if (targetTripId == null) {
+            targetTripId = 1L;
+        }
+
+        TripSearchResponse trip = tripService.getTripById(targetTripId);
+        List<TripSeatResponse> seats = tripService.getTripSeats(targetTripId);
 
         model.addAttribute("trip", trip);
         model.addAttribute("seats", seats);
 
         if (!model.containsAttribute("bookingRequest")) {
             model.addAttribute("bookingRequest", HoldSeatRequest.builder()
-                    .tripId(tripId)
+                    .tripId(targetTripId)
                     .build());
         }
 
@@ -99,7 +96,7 @@ public class WebViewController {
     /**
      * Tra cứu vé xe điện tử & Tem số
      */
-    @GetMapping("/mvc/my-tickets")
+    @GetMapping({"/my-tickets", "/mvc/my-tickets"})
     public String lookupTickets(
             @RequestParam(value = "phone", required = false) String phone,
             @RequestParam(value = "ticketCode", required = false) String ticketCode,
@@ -116,7 +113,7 @@ public class WebViewController {
     /**
      * Form Đăng nhập đa vai trò (Spring Web MVC)
      */
-    @GetMapping("/mvc/login")
+    @GetMapping({"/login", "/mvc/login"})
     public String loginPage() {
         return "login";
     }

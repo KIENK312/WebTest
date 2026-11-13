@@ -12,16 +12,16 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/mvc">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
             <i class="bi bi-compass-fill fs-3"></i>
-            <span>TRAVEL PORTAL</span>
+            <span>BUSTICKET PRO</span>
         </a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/mvc">Trang Chủ</a></li>
-                <li class="nav-item"><a class="nav-link" href="/mvc/trips">Tìm Chuyến Xe</a></li>
+                <li class="nav-item"><a class="nav-link" href="/">Trang Chủ</a></li>
+                <li class="nav-item"><a class="nav-link" href="/trips">Tìm Chuyến Xe</a></li>
                 <li class="nav-item"><a class="nav-link" href="/appointments">Đặt Lịch Hẹn Tư Vấn</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/mvc/my-tickets">Tra Cứu Vé & Tem Số</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/my-tickets">Tra Cứu Vé & Tem Số</a></li>
             </ul>
         </div>
     </div>
@@ -32,7 +32,7 @@
         <h4 class="fw-bold mb-3"><i class="bi bi-search me-2 text-primary"></i>Tra Cứu Vé Xe Điện Tử & Tem Số</h4>
         <p class="text-muted small mb-4">Nhập số điện thoại đã sử dụng khi đặt vé để xem danh sách vé, kiểm tra tình trạng thanh toán và lấy mã QR lên xe.</p>
 
-        <form action="/mvc/my-tickets" method="get" class="row g-3 mb-4">
+        <form action="/my-tickets" method="get" class="row g-3 mb-4">
             <div class="col-md-9">
                 <label class="form-label text-secondary fw-semibold">Số điện thoại liên hệ</label>
                 <input type="tel" class="form-control form-control-lg" name="phone" th:value="${searchedPhone}" placeholder="0901234567" required>

@@ -12,9 +12,9 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/mvc">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
             <i class="bi bi-compass-fill fs-3"></i>
-            <span>TRAVEL PORTAL</span>
+            <span>BUSTICKET PRO</span>
         </a>
     </div>
 </nav>
@@ -96,7 +96,7 @@
                 } else if (role === 'ROLE_OPERATOR') {
                     window.location.href = '/operator.html';
                 } else {
-                    window.location.href = '/mvc';
+                    window.location.href = '/';
                 }
             } else {
                 alertBox.innerText = data.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.';

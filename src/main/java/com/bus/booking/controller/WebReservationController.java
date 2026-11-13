@@ -49,7 +49,7 @@ public class WebReservationController {
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
             redirectAttributes.addFlashAttribute("errorMessage", errorMsg);
-            return "redirect:/mvc/trips/" + request.getTripId() + "/booking";
+            return "redirect:/trips/" + request.getTripId() + "/booking";
         }
 
         try {
@@ -63,7 +63,7 @@ public class WebReservationController {
         } catch (Exception ex) {
             log.error("[PRG-STEP-1: ERROR] Lỗi khi giữ chỗ: {}", ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/mvc/trips/" + request.getTripId() + "/booking";
+            return "redirect:/trips/" + request.getTripId() + "/booking";
         }
     }
 
@@ -89,7 +89,7 @@ public class WebReservationController {
         } catch (Exception ex) {
             log.error("[PRG-STEP-2: ERROR] Không tìm thấy vé ID={}: {}", ticketId, ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", "Vé không tồn tại hoặc đã hết hạn giữ chỗ.");
-            return "redirect:/mvc/trips";
+            return "redirect:/trips";
         }
     }
 
@@ -151,7 +151,7 @@ public class WebReservationController {
         } catch (Exception ex) {
             log.error("[PRG-STEP-4: ERROR] Không tìm thấy vé: {}", ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", "Không thể lấy thông tin vé.");
-            return "redirect:/mvc/trips";
+            return "redirect:/trips";
         }
     }
 }

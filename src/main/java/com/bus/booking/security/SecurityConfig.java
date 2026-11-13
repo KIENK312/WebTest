@@ -102,6 +102,7 @@ public class SecurityConfig {
                             "/index.html", "/login.html", "/my-tickets.html",
                             "/trips.html", "/seat-selection.html", "/payment.html",
                             "/operator.html", "/admin.html", "/api.js",
+                            "/trips", "/trips/**", "/my-tickets", "/login", "/seat-selection",
                             "/mvc/**", "/reservations/**", "/appointments/**"
                         ).permitAll()
 
