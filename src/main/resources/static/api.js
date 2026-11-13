@@ -295,7 +295,7 @@ function renderNavbar(activePage = '') {
               <i class="fa-solid fa-route text-xs mr-1.5 opacity-70"></i>Tìm chuyến
             </a>
             <a href="appointments.html" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'appointments' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
-              <i class="fa-solid fa-calendar-check text-xs mr-1.5 text-orange-500"></i>Lịch hẹn tư vấn
+              <i class="fa-solid ${isOp ? 'fa-clipboard-check text-indigo-600' : 'fa-calendar-check text-orange-500'} text-xs mr-1.5"></i>${isOp ? 'Tiếp nhận tư vấn' : 'Lịch hẹn tư vấn'}
             </a>
             <a href="my-tickets.html" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'tickets' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
               <i class="fa-solid fa-ticket text-xs mr-1.5 opacity-70"></i>Vé của tôi

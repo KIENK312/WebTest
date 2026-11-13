@@ -115,10 +115,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tickets/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/tickets/cancel/**").permitAll()
 
-                        // Public endpoints cho Lịch hẹn tư vấn (Workflow 4)
+                        // Endpoints cho Lịch hẹn tư vấn (Workflow 4)
                         .requestMatchers(HttpMethod.POST, "/api/v1/appointments/schedule").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/appointments/standard-slots").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/appointments/my").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/appointments/all", "/api/v1/appointments/by-date").hasAnyRole("OPERATOR", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/appointments/*/status").hasAnyRole("OPERATOR", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/appointments/*").permitAll()
 
                         // Role CUSTOMER / Authenticated for tickets, users & payments

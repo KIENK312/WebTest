@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đăng Ký Lịch Hẹn & Tem Số Tư Vấn – BusTicket Pro</title>
+  <title>Lịch Hẹn & Tem Số Tư Vấn – BusTicket Pro</title>
   
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,41 +35,61 @@
   <!-- Shared Navbar -->
   <div id="navbar"></div>
 
-  <!-- Hero Header -->
+  <!-- Hero Header (Dynamic for Customer vs Staff) -->
   <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white py-10 px-4 sm:px-6 relative overflow-hidden shadow-lg">
     <div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
-    <div class="max-w-5xl mx-auto relative z-10 text-center">
-      <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
+    <div class="max-w-6xl mx-auto relative z-10 text-center">
+      
+      <!-- Customer Badge -->
+      <span id="badge-customer" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
         <i class="fa-solid fa-ticket-simple"></i>
         <span>Phân hệ Đăng ký Lịch hẹn & Cấp Tem số</span>
       </span>
-      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Đăng Ký Lịch Hẹn & Phiếu Tiếp Nhận Tư Vấn</h1>
-      <p class="mt-2 text-sm sm:text-base text-blue-100 max-w-2xl mx-auto">
+
+      <!-- Staff Badge (Admin & Operator) -->
+      <span id="badge-staff" class="hidden inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-black uppercase tracking-wider mb-3 shadow-md">
+        <i class="fa-solid fa-headset"></i>
+        <span>Bàn Điều Hành – Tra Cứu & Tiếp Nhận Tem Số Tư Vấn</span>
+      </span>
+
+      <h1 id="hero-title" class="text-2xl sm:text-4xl font-extrabold tracking-tight">Đăng Ký Lịch Hẹn & Phiếu Tiếp Nhận Tư Vấn</h1>
+      <p id="hero-subtitle" class="mt-2 text-sm sm:text-base text-blue-100 max-w-2xl mx-auto">
         Đặt hẹn trước với chuyên viên điều hành để được tư vấn lộ trình xe khách, chính sách hợp đồng đoàn, hoặc nhận hỗ trợ trực tiếp không cần xếp hàng.
       </p>
+
+      <!-- Staff Operator Info Box -->
+      <div id="staff-info-box" class="hidden mt-4 inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-xs font-semibold">
+        <i class="fa-solid fa-user-shield text-amber-300 text-sm"></i>
+        <span>Nhân viên trực quầy: <strong id="staff-name-label" class="text-white">Admin</strong></span>
+        <span class="text-white/40">|</span>
+        <span class="text-amber-200">Vai trò: <span id="staff-role-label">OPERATOR</span></span>
+      </div>
     </div>
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8">
 
-    <!-- Tab Buttons -->
-    <div class="flex justify-center">
+    <!-- Tab Buttons (Only for Customer, Hidden for Admin/Operator) -->
+    <div id="tab-controls-wrapper" class="flex justify-center">
       <div class="inline-flex p-1.5 bg-slate-200/80 rounded-2xl gap-1">
-        <button id="tab-btn-schedule" onclick="switchTab('schedule')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-white text-blue-700 shadow-sm">
+        <button id="tab-btn-schedule" onclick="switchCustomerTab('schedule')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-white text-blue-700 shadow-sm">
           <i class="fa-solid fa-calendar-plus text-xs"></i>
           <span>Đặt Lịch Hẹn Mới</span>
         </button>
-        <button id="tab-btn-lookup" onclick="switchTab('lookup')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900">
+        <button id="tab-btn-lookup" onclick="switchCustomerTab('lookup')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900">
           <i class="fa-solid fa-magnifying-glass text-xs"></i>
-          <span>Tra Cứu Tem Số</span>
+          <span>Tra Cứu Tem Số Của Tôi</span>
         </button>
       </div>
     </div>
 
-    <!-- TAB 1: SCHEDULE FORM -->
+    <!-- ============================================================== -->
+    <!-- 1. GIAO DIỆN KHÁCH HÀNG (CUSTOMER / GUEST)                      -->
+    <!-- ============================================================== -->
+
+    <!-- TAB 1: SCHEDULE FORM (KHÁCH HÀNG ĐẶT LỊCH HẸN MỚI) -->
     <section id="section-schedule" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
       <!-- Form Box -->
       <div class="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
         <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
@@ -102,10 +122,10 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">Địa chỉ Email (Nhận tem số điện tử) <span class="text-red-500">*</span></label>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Địa chỉ Email (Nhận tem số điện tử)</label>
             <div class="relative">
               <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-              <input type="email" id="cust-email" required placeholder="nguyenvana@example.com" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
+              <input type="email" id="cust-email" placeholder="nguyenvana@example.com" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
             </div>
           </div>
 
@@ -142,7 +162,7 @@
                 <option value="Tư vấn lộ trình xe khách & hợp đồng đoàn" selected>Tư vấn lộ trình xe khách & hợp đồng đoàn</option>
                 <option value="Tư vấn chính sách giá vé & khuyến mãi">Tư vấn chính sách giá vé & khuyến mãi</option>
                 <option value="Hỗ trợ đổi / hoàn vé đặc biệt">Hỗ trợ đổi / hoàn vé đặc biệt</option>
-                <option value="Tư vấn hợp đồng đại lý / nhà xe">Tư vấn hợp tác đối tác nhà xe</option>
+                <option value="Tư vấn hợp tác đối tác nhà xe">Tư vấn hợp tác đối tác nhà xe</option>
               </select>
             </div>
           </div>
@@ -196,21 +216,21 @@
       </div>
     </section>
 
-    <!-- TAB 2: LOOKUP FORM -->
-    <section id="section-lookup" class="hidden max-w-xl mx-auto">
+    <!-- TAB 2: LOOKUP FORM (DÀNH CHO KHÁCH HÀNG TRA CỨU) -->
+    <section id="section-customer-lookup" class="hidden max-w-xl mx-auto">
       <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 text-center">
         <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl mx-auto mb-4">
           <i class="fa-solid fa-magnifying-glass"></i>
         </div>
         <h2 class="text-xl font-black text-slate-900 mb-1">Tra Cứu Phiếu Hẹn & Tem Số</h2>
-        <p class="text-xs text-slate-500 mb-6">Nhập Mã lịch hẹn (HEN-...) hoặc Số điện thoại để xem lại Tem số</p>
+        <p class="text-xs text-slate-500 mb-6">Nhập Mã lịch hẹn (HEN-...) hoặc Số điện thoại để xem lại Tem số của bạn</p>
 
-        <form onsubmit="handleLookup(event)" class="space-y-4 text-left">
+        <form onsubmit="handleCustomerLookup(event)" class="space-y-4 text-left">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">Số điện thoại hoặc Mã hẹn</label>
-            <input type="text" id="lookup-keyword" required placeholder="Nhập SĐT (09...) hoặc Mã (HEN-202611...)" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
+            <input type="text" id="cust-lookup-keyword" required placeholder="Nhập SĐT (09...) hoặc Mã (HEN-202611...)" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
           </div>
-          <button type="submit" id="btn-lookup" class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition">
+          <button type="submit" id="btn-cust-lookup" class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition">
             <i class="fa-solid fa-search"></i>
             <span>Tra Cứu Ngay</span>
           </button>
@@ -218,7 +238,98 @@
       </div>
     </section>
 
-    <!-- RESULT MODAL / PRINTABLE TEM SỐ (PHIẾU TIẾP NHẬN TƯ VẤN) -->
+    <!-- ============================================================== -->
+    <!-- 2. GIAO DIỆN ĐIỀU HÀNH DÀNH RIÊNG CHO ADMIN & OPERATOR          -->
+    <!-- (Chỉ tra cứu & tiếp nhận tư vấn khách hàng)                     -->
+    <!-- ============================================================== -->
+    <section id="section-staff-panel" class="hidden space-y-6">
+      
+      <!-- Top Staff Search & Filter Bar -->
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-magnifying-glass-chart text-blue-600"></i>
+              <span>Tra Cứu Nhanh Tem Số Khách Hàng</span>
+            </h2>
+            <p class="text-xs text-slate-500">Nhập mã Tem số hoặc số điện thoại của hành khách đang có mặt tại quầy</p>
+          </div>
+
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <button onclick="loadStaffAppointments()" class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-2 transition">
+              <i class="fa-solid fa-arrows-rotate text-blue-600"></i>
+              <span>Làm mới danh sách</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Search Form -->
+        <form onsubmit="handleStaffQuickSearch(event)" class="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div class="sm:col-span-8 relative">
+            <i class="fa-solid fa-barcode absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <input type="text" id="staff-search-input" placeholder="Nhập Mã Tem số (ví dụ: HEN-20261114-5E73) hoặc Số điện thoại..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
+          </div>
+          <div class="sm:col-span-4 flex gap-2">
+            <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-search"></i>
+              <span>Tra Cứu</span>
+            </button>
+            <button type="button" onclick="clearStaffSearch()" class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+              Xóa lọc
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Staff Appointments Table -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        
+        <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <h3 class="font-bold text-sm text-slate-800">Danh Sách Lịch Hẹn & Tem Số Chờ Tư Vấn</h3>
+            <span id="staff-total-count" class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-extrabold text-[11px]">0 lượt</span>
+          </div>
+
+          <!-- Status Filter Tabs -->
+          <div class="flex items-center gap-1 text-xs">
+            <button onclick="filterStaffStatus('ALL')" id="filter-btn-ALL" class="px-3 py-1.5 rounded-lg font-bold bg-blue-600 text-white">Tất cả</button>
+            <button onclick="filterStaffStatus('PENDING')" id="filter-btn-PENDING" class="px-3 py-1.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Chờ tư vấn</button>
+            <button onclick="filterStaffStatus('CONFIRMED')" id="filter-btn-CONFIRMED" class="px-3 py-1.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Đang tiếp nhận</button>
+            <button onclick="filterStaffStatus('COMPLETED')" id="filter-btn-COMPLETED" class="px-3 py-1.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Hoàn tất</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-100/60 text-slate-600 font-extrabold uppercase tracking-wider">
+                <th class="py-3.5 px-4">Mã Tem Số</th>
+                <th class="py-3.5 px-4">Khách Hàng</th>
+                <th class="py-3.5 px-4">Số Điện Thoại</th>
+                <th class="py-3.5 px-4">Thời Gian Hẹn</th>
+                <th class="py-3.5 px-4">Nội Dung Cần Tư Vấn</th>
+                <th class="py-3.5 px-4">Trạng Thái</th>
+                <th class="py-3.5 px-4 text-center">Thao Tác Tiếp Nhận</th>
+              </tr>
+            </thead>
+            <tbody id="staff-table-body" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="7" class="py-8 text-center text-slate-400">
+                  <i class="fa-solid fa-spinner fa-spin text-xl text-blue-600 mb-2"></i>
+                  <p>Đang tải danh sách Tem số tiếp nhận...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 3. RESULT MODAL / PRINTABLE TEM SỐ (PHIẾU TIẾP NHẬN TƯ VẤN)    -->
+    <!-- ============================================================== -->
     <div id="modal-slip" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4 overflow-y-auto">
       <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden transform transition-all duration-300 my-8">
         
@@ -263,6 +374,10 @@
               <span id="slip-type" class="font-bold text-slate-800 text-right">—</span>
             </div>
             <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-500">Nhân viên phụ trách:</span>
+              <span id="slip-staff" class="font-semibold text-slate-700">—</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
               <span class="text-slate-500">Trạng thái:</span>
               <span id="slip-status" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold text-[10px]">CHỜ TƯ VẤN</span>
             </div>
@@ -272,12 +387,12 @@
             </div>
           </div>
 
-          <!-- Barcode & QR Code simulation -->
+          <!-- Barcode simulation -->
           <div class="pt-3 border-t-2 border-dashed border-slate-200 text-center">
             <div class="h-10 bg-slate-900 flex items-center justify-around px-4 rounded text-white font-mono text-[9px] tracking-widest">
               ||| | |||| | ||| || |||| | ||| | ||
             </div>
-            <p class="text-[9px] text-slate-400 mt-1">Vui lòng có mặt trước khung giờ hẹn 10 phút tại Quầy Dịch Vụ</p>
+            <p class="text-[9px] text-slate-400 mt-1">Xuất trình Tem số tại quầy tiếp nhận để được phục vụ ưu tiên</p>
           </div>
         </div>
 
@@ -304,9 +419,219 @@
   <!-- Scripts -->
   <script src="api.js"></script>
   <script>
+    let isStaffUser = false;
+    let staffAllAppointments = [];
+    let currentFilterStatus = 'ALL';
+
     document.addEventListener('DOMContentLoaded', async () => {
       renderNavbar('appointments');
 
+      const user = getCurrentUser();
+      const role = user?.role || '';
+      isStaffUser = role.includes('ADMIN') || role.includes('OPERATOR');
+
+      if (isStaffUser) {
+        // ==============================================================
+        // PHÂN HỆ DÀNH CHO ADMIN & OPERATOR: CHỈ TRA CỨU & TIẾP NHẬN
+        // ==============================================================
+        setupStaffUI(user);
+        loadStaffAppointments();
+
+      } else {
+        // ==============================================================
+        // PHÂN HỆ DÀNH CHO KHÁCH HÀNG: GIỮ NGUYÊN FORM ĐẶT LỊCH & TRA CỨU
+        // ==============================================================
+        setupCustomerUI(user);
+      }
+
+      // Check url param
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeParam = urlParams.get('code');
+      if (codeParam) {
+        loadSlipByCode(codeParam);
+      }
+    });
+
+    // ----------------------------------------------------------------
+    // 1. CẤU HÌNH GIAO DIỆN ADMIN & OPERATOR
+    // ----------------------------------------------------------------
+    function setupStaffUI(user) {
+      // Ẩn tab controls của khách
+      document.getElementById('tab-controls-wrapper').classList.add('hidden');
+      document.getElementById('section-schedule').classList.add('hidden');
+      document.getElementById('section-customer-lookup').classList.add('hidden');
+
+      // Hiển thị panel nghiệp vụ tiếp nhận tư vấn
+      document.getElementById('section-staff-panel').classList.remove('hidden');
+
+      // Cập nhật Hero Header cho nhân viên
+      document.getElementById('badge-customer').classList.add('hidden');
+      document.getElementById('badge-staff').classList.remove('hidden');
+      document.getElementById('hero-title').textContent = 'Tra Cứu & Tiếp Nhận Tem Số Tư Vấn';
+      document.getElementById('hero-subtitle').textContent = 'Dành cho Quản trị viên và Nhân viên đối tác: Tra cứu Tem số của hành khách, tiếp nhận tư vấn trực tiếp và cập nhật tiến độ.';
+      
+      // Hiển thị thông tin nhân viên
+      document.getElementById('staff-info-box').classList.remove('hidden');
+      document.getElementById('staff-name-label').textContent = user.fullName || user.username || 'Nhân viên';
+      document.getElementById('staff-role-label').textContent = user.role || 'STAFF';
+    }
+
+    async function loadStaffAppointments() {
+      const tbody = document.getElementById('staff-table-body');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="py-8 text-center text-slate-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-xl text-blue-600 mb-2"></i>
+            <p>Đang tải danh sách Tem số tiếp nhận...</p>
+          </td>
+        </tr>`;
+
+      try {
+        const list = await fetchAPI('/appointments/all');
+        staffAllAppointments = Array.isArray(list) ? list : [];
+        renderStaffTable();
+      } catch (err) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-8 text-center text-red-500">
+              <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
+              <p>Không thể tải danh sách lịch hẹn. Vui lòng thử lại!</p>
+            </td>
+          </tr>`;
+      }
+    }
+
+    function renderStaffTable() {
+      const tbody = document.getElementById('staff-table-body');
+      const kw = document.getElementById('staff-search-input').value.trim().toLowerCase();
+
+      let filtered = staffAllAppointments.filter(item => {
+        // Lọc trạng thái
+        if (currentFilterStatus !== 'ALL' && item.status !== currentFilterStatus) {
+          return false;
+        }
+        // Lọc từ khóa
+        if (kw) {
+          const matchCode = (item.appointmentCode || '').toLowerCase().includes(kw);
+          const matchPhone = (item.customerPhone || '').toLowerCase().includes(kw);
+          const matchName = (item.customerName || '').toLowerCase().includes(kw);
+          return matchCode || matchPhone || matchName;
+        }
+        return true;
+      });
+
+      document.getElementById('staff-total-count').textContent = `${filtered.length} lượt`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-10 text-center text-slate-400">
+              <i class="fa-solid fa-folder-open text-2xl mb-2 text-slate-300"></i>
+              <p>Không có lịch hẹn nào phù hợp với bộ lọc</p>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const statusBadge = getStatusBadge(item.status);
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4 font-mono font-bold text-blue-700">${item.appointmentCode}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${item.customerName}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${item.customerPhone}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-800">${item.appointmentDate}</div>
+              <div class="text-[11px] text-orange-600 font-semibold">${item.timeSlot}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-700 max-w-xs truncate" title="${item.consultationType || ''}">
+              ${item.consultationType || '—'}
+            </td>
+            <td class="py-3 px-4">${statusBadge}</td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="displaySlipByObject(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-[11px] flex items-center gap-1 transition" title="Xem chi tiết phiếu Tem số">
+                  <i class="fa-solid fa-eye"></i>
+                  <span>Xem</span>
+                </button>
+                ${item.status === 'PENDING' ? `
+                  <button onclick="updateAppointmentStatus(${item.id}, 'CONFIRMED')" class="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 transition" title="Bắt đầu tiếp nhận tư vấn">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Tiếp nhận</span>
+                  </button>
+                ` : ''}
+                ${item.status === 'CONFIRMED' ? `
+                  <button onclick="updateAppointmentStatus(${item.id}, 'COMPLETED')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 transition" title="Đã hoàn tất tư vấn">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Hoàn tất</span>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'PENDING':
+          return '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold text-[10px]">CHỜ TƯ VẤN</span>';
+        case 'CONFIRMED':
+          return '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-extrabold text-[10px]">ĐANG TIẾP NHẬN</span>';
+        case 'COMPLETED':
+          return '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">HOÀN TẤT</span>';
+        case 'CANCELLED':
+          return '<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-extrabold text-[10px]">ĐÃ HỦY</span>';
+        default:
+          return `<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">${status}</span>`;
+      }
+    }
+
+    function filterStaffStatus(status) {
+      currentFilterStatus = status;
+      ['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED'].forEach(s => {
+        const btn = document.getElementById(`filter-btn-${s}`);
+        if (btn) {
+          if (s === status) {
+            btn.className = 'px-3 py-1.5 rounded-lg font-bold bg-blue-600 text-white';
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300';
+          }
+        }
+      });
+      renderStaffTable();
+    }
+
+    function handleStaffQuickSearch(e) {
+      e.preventDefault();
+      renderStaffTable();
+    }
+
+    function clearStaffSearch() {
+      document.getElementById('staff-search-input').value = '';
+      currentFilterStatus = 'ALL';
+      filterStaffStatus('ALL');
+    }
+
+    async function updateAppointmentStatus(id, newStatus) {
+      const user = getCurrentUser();
+      const staffName = user ? (user.fullName || user.username) : 'Nhân viên điều hành';
+
+      try {
+        const res = await fetchAPI(`/appointments/${id}/status?status=${newStatus}&assignedStaff=${encodeURIComponent(staffName)}`, 'PUT');
+        if (res) {
+          showToast(`Đã cập nhật trạng thái Tem số thành công!`, 'success');
+          loadStaffAppointments();
+        }
+      } catch (err) {
+        showToast('Không thể cập nhật trạng thái', 'error');
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // 2. CẤU HÌNH GIAO DIỆN KHÁCH HÀNG (CUSTOMER / GUEST)
+    // ----------------------------------------------------------------
+    async function setupCustomerUI(user) {
       // Đặt ngày hẹn mặc định là ngày mai
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -322,29 +647,19 @@
           const select = document.getElementById('cust-slot');
           select.innerHTML = slots.map((s, i) => `<option value="${s}" ${i === 0 ? 'selected' : ''}>${s}</option>`).join('');
         }
-      } catch (e) {
-        // Giữ các options tĩnh mặc định
-      }
+      } catch (e) {}
 
       // Điền sẵn thông tin user nếu đã đăng nhập
-      const user = getCurrentUser();
       if (user) {
         document.getElementById('cust-name').value = user.fullName || '';
         document.getElementById('cust-phone').value = user.phone || user.phoneNumber || '';
         document.getElementById('cust-email').value = user.email || '';
       }
+    }
 
-      // Check url param
-      const urlParams = new URLSearchParams(window.location.search);
-      const codeParam = urlParams.get('code');
-      if (codeParam) {
-        loadSlipByCode(codeParam);
-      }
-    });
-
-    function switchTab(tab) {
+    function switchCustomerTab(tab) {
       const secSchedule = document.getElementById('section-schedule');
-      const secLookup = document.getElementById('section-lookup');
+      const secLookup = document.getElementById('section-customer-lookup');
       const btnSchedule = document.getElementById('tab-btn-schedule');
       const btnLookup = document.getElementById('tab-btn-lookup');
 
@@ -381,18 +696,16 @@
             showSuccessModal('Đăng ký thành công! 🎉', `Mã tiếp nhận: ${res.appointmentCode}. Vui lòng lưu lại Tem số để xuất trình.`);
             displaySlip(res);
           }
-        } catch (err) {
-          // Toast / Modal lỗi đã được fetchAPI xử lý
-        }
+        } catch (err) {}
       }, 'Đang cấp tem số...');
     }
 
-    async function handleLookup(e) {
+    async function handleCustomerLookup(e) {
       e.preventDefault();
-      const kw = document.getElementById('lookup-keyword').value.trim();
+      const kw = document.getElementById('cust-lookup-keyword').value.trim();
       if (!kw) return;
 
-      const btn = document.getElementById('btn-lookup');
+      const btn = document.getElementById('btn-cust-lookup');
       withButtonLoading(btn, async () => {
         try {
           if (kw.toUpperCase().startsWith('HEN-')) {
@@ -419,6 +732,10 @@
       } catch (err) {}
     }
 
+    function displaySlipByObject(data) {
+      displaySlip(data);
+    }
+
     function displaySlip(data) {
       document.getElementById('slip-code').textContent = data.appointmentCode || 'HEN-XXXX';
       document.getElementById('slip-name').textContent = data.customerName || '—';
@@ -426,7 +743,8 @@
       document.getElementById('slip-date').textContent = data.appointmentDate || '—';
       document.getElementById('slip-slot').textContent = data.timeSlot || '—';
       document.getElementById('slip-type').textContent = data.consultationType || '—';
-      document.getElementById('slip-status').textContent = data.status || 'CHỜ TƯ VẤN';
+      document.getElementById('slip-staff').textContent = data.assignedStaff || 'Chuyên viên tư vấn quầy';
+      document.getElementById('slip-status').innerHTML = getStatusBadge(data.status);
       document.getElementById('slip-notes').textContent = data.notes || '(Không có ghi chú)';
 
       const modal = document.getElementById('modal-slip');
