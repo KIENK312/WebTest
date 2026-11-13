@@ -271,20 +271,26 @@ function renderNavbar(activePage = '') {
             <div>
               <span class="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 bg-clip-text text-transparent">BusTicket</span>
               <span class="hidden sm:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-md">Pro</span>
-              <p class="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Vé xe khách liên tỉnh</p>
+              <p class="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Vé xe khách & Lịch hẹn tư vấn du lịch</p>
             </div>
           </a>
 
-          <!-- Main Nav Links -->
+          <!-- Main Nav Links (Hiển thị đầy đủ 4 Workflows theo Đề 5) -->
           <nav class="hidden md:flex items-center gap-1">
-            <a href="index.html" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'home' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
+            <a href="index.html" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'home' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
               <i class="fa-solid fa-house-chimney text-xs mr-1.5 opacity-70"></i>Trang chủ
             </a>
-            <a href="trips.html" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'trips' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
+            <a href="trips.html" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'trips' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
               <i class="fa-solid fa-route text-xs mr-1.5 opacity-70"></i>Tìm chuyến
             </a>
-            <a href="my-tickets.html" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'tickets' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
+            <a href="/appointments" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'appointments' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
+              <i class="fa-solid fa-calendar-check text-xs mr-1.5 text-orange-500"></i>Lịch hẹn tư vấn
+            </a>
+            <a href="my-tickets.html" class="px-3 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'tickets' ? 'text-blue-600 bg-blue-50/80 font-bold' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}">
               <i class="fa-solid fa-ticket text-xs mr-1.5 opacity-70"></i>Vé của tôi
+            </a>
+            <a href="/mvc/trips" class="hidden xl:inline-flex px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all" title="Luồng đặt vé MVC áp dụng Post-Redirect-Get">
+              <i class="fa-solid fa-arrows-rotate text-[11px] mr-1 opacity-70"></i>Luồng PRG
             </a>
             ${isOp ? `
               <a href="operator.html" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${activePage === 'operator' ? 'text-indigo-600 bg-indigo-50 font-bold' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'}">

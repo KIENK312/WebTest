@@ -18,6 +18,8 @@ import com.bus.booking.repository.TicketRepository;
 import com.bus.booking.repository.TripRepository;
 import com.bus.booking.repository.UserRepository;
 import com.bus.booking.service.BookingService;
+import com.bus.booking.service.strategy.TransportBookingStrategy;
+import com.bus.booking.service.strategy.TransportStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,6 +42,7 @@ public class BookingServiceImpl implements BookingService {
     private final SeatRepository seatRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final TransportStrategyFactory transportStrategyFactory;
 
     private static final int HOLD_EXPIRATION_MINUTES = 15;
 
@@ -89,17 +92,25 @@ public class BookingServiceImpl implements BookingService {
             ));
         }
 
-        // 4. Tìm tài khoản người dùng nếu có liên kết
+        // 4. Áp dụng Strategy Pattern (Khối IV): Kiểm tra quy tắc nghiệp vụ và tính toán giá vé theo loại xe khách
+        String busType = (trip.getBus() != null && trip.getBus().getBusType() != null)
+                ? trip.getBus().getBusType()
+                : "STANDARD_BUS";
+        TransportBookingStrategy strategy = transportStrategyFactory.getStrategy(busType);
+        strategy.validateBooking(trip, seat, request);
+        java.math.BigDecimal finalPrice = strategy.calculateFare(trip, seat, request);
+
+        // 5. Tìm tài khoản người dùng nếu có liên kết
         UserEntity user = null;
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId()).orElse(null);
         }
 
-        // 5. Sinh mã vé tra cứu duy nhất
+        // 6. Sinh mã vé tra cứu duy nhất
         String ticketCode = generateTicketCode(trip.getId(), seat.getSeatNumber());
         LocalDateTime now = LocalDateTime.now();
 
-        // 6. Tạo thực thể vé với trạng thái PENDING và version = 0 (Optimistic Lock)
+        // 7. Tạo thực thể vé với trạng thái PENDING và version = 0 (Optimistic Lock)
         TicketEntity ticket = TicketEntity.builder()
                 .trip(trip)
                 .seat(seat)
@@ -108,13 +119,13 @@ public class BookingServiceImpl implements BookingService {
                 .customerPhone(request.getCustomerPhone().trim())
                 .customerEmail(request.getCustomerEmail() != null ? request.getCustomerEmail().trim() : null)
                 .ticketCode(ticketCode)
-                .price(trip.getBasePrice())
+                .price(finalPrice != null ? finalPrice : trip.getBasePrice())
                 .status(TicketStatus.PENDING)
                 .bookingTime(now)
                 .version(0L)
                 .build();
 
-        // 7. Lưu vé và xử lý bắt ngoại lệ Optimistic Locking khi nhiều luồng cùng thao tác ghế này
+        // 8. Lưu vé và xử lý bắt ngoại lệ Optimistic Locking khi nhiều luồng cùng thao tác ghế này
         try {
             TicketEntity savedTicket = ticketRepository.saveAndFlush(ticket);
             log.info("Giữ chỗ thành công: ticketId={}, ticketCode={}, seat={}",

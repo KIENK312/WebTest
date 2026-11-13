@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Danh Sách Chuyến Xe – BusTicket Pro</title>
+  <title>Danh Sách Chuyến Xe Khách Du Lịch – BusTicket Pro</title>
   
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -927,12 +927,19 @@
                 </span>
               </div>
 
-              <a href="seat-selection.html?tripId=${trip.tripId}"
-                 onclick="return handleSelectTrip(event, this, ${trip.tripId})"
-                 class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl ${actionBtnClasses} text-white font-black text-sm shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300">
-                <span>Chọn ghế</span>
-                <i class="fa-solid fa-arrow-right text-xs"></i>
-              </a>
+              <div class="flex flex-col items-end gap-1.5">
+                <a href="seat-selection.html?tripId=${trip.tripId}"
+                   onclick="return handleSelectTrip(event, this, ${trip.tripId})"
+                   class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl ${actionBtnClasses} text-white font-black text-sm shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300">
+                  <span>Chọn ghế</span>
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+                <a href="/mvc/trips/${trip.tripId}/booking"
+                   class="text-[11px] font-semibold text-slate-400 hover:text-indigo-600 transition flex items-center gap-1"
+                   title="Trải nghiệm đặt vé theo mô hình PRG (Khối V)">
+                  <i class="fa-solid fa-repeat text-[10px] text-indigo-500"></i> Đặt vé luồng PRG
+                </a>
+              </div>
             </div>
 
           </div>

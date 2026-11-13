@@ -5,12 +5,15 @@ import com.bus.booking.dto.response.ApiResponse;
 import com.bus.booking.dto.response.TripSearchResponse;
 import com.bus.booking.dto.response.TripSeatResponse;
 import com.bus.booking.service.TripService;
+import com.bus.booking.service.strategy.TransportBookingStrategy;
+import com.bus.booking.service.strategy.TransportStrategyFactory;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/trips")
@@ -18,6 +21,7 @@ import java.util.List;
 public class TripController {
 
     private final TripService tripService;
+    private final TransportStrategyFactory transportStrategyFactory;
 
     /**
      * Tìm kiếm và lấy danh sách chuyến xe công khai (hỗ trợ lấy tất cả chuyến đang mở bán).
@@ -51,5 +55,43 @@ public class TripController {
             @PathVariable("id") Long tripId) {
         List<TripSeatResponse> seats = tripService.getTripSeats(tripId);
         return ResponseEntity.ok(ApiResponse.success("Lấy sơ đồ ghế thành công", seats));
+    }
+
+    /**
+     * Tra cứu chính sách và quy tắc đặt vé theo Strategy Pattern của chuyến xe khách (Khối IV).
+     */
+    @GetMapping("/{id}/policy")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getTripBookingPolicy(
+            @PathVariable("id") Long tripId) {
+        TripSearchResponse trip = tripService.getTripById(tripId);
+        TransportBookingStrategy strategy = transportStrategyFactory.getStrategy(trip.getBusType());
+
+        Map<String, Object> policyData = Map.of(
+                "tripId", tripId,
+                "busType", trip.getBusType() != null ? trip.getBusType() : "STANDARD_BUS",
+                "strategyType", strategy.getTransportType(),
+                "strategyName", strategy.getDisplayName(),
+                "cancellationPolicy", strategy.getCancellationPolicy(),
+                "businessRules", strategy.getBusinessRules()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success("Lấy chính sách đặt vé theo Strategy thành công", policyData));
+    }
+
+    /**
+     * Liệt kê các chiến lược đặt vé xe khách đang áp dụng trong hệ thống (Strategy Pattern Showcase).
+     */
+    @GetMapping("/booking-strategies")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getAllBookingStrategies() {
+        List<Map<String, Object>> list = transportStrategyFactory.getAllStrategies().stream()
+                .map(s -> Map.of(
+                        "type", (Object) s.getTransportType(),
+                        "displayName", s.getDisplayName(),
+                        "cancellationPolicy", s.getCancellationPolicy(),
+                        "businessRules", s.getBusinessRules()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success("Danh sách các Strategy nghiệp vụ xe khách", list));
     }
 }

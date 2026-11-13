@@ -33,3 +33,4 @@ build/
 
 ### Log files ###
 *.log
+src/main/resources/static_backup_rest_api/
