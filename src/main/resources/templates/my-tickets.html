@@ -1,88 +1,327 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Vé & Tem Số - Travel Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tra Cứu Vé Xe Điện Tử & Tem Số – BusTicket Pro</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="bg-light">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
-            <i class="bi bi-compass-fill fs-3"></i>
-            <span>BUSTICKET PRO</span>
+  <!-- Header / Navbar (Đồng bộ 100% toàn hệ thống) -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-100 sticky top-0 z-40 shadow-xs transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        
+        <!-- Logo Brand -->
+        <a th:href="@{/}" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+            <i class="fa-solid fa-bus text-lg"></i>
+          </div>
+          <div>
+            <span class="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 bg-clip-text text-transparent">BusTicket</span>
+            <span class="hidden sm:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-md">Pro</span>
+            <p class="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Vé xe khách & Lịch hẹn tư vấn du lịch</p>
+          </div>
         </a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/">Trang Chủ</a></li>
-                <li class="nav-item"><a class="nav-link" href="/trips">Tìm Chuyến Xe</a></li>
-                <li class="nav-item"><a class="nav-link" href="/appointments">Đặt Lịch Hẹn Tư Vấn</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/my-tickets">Tra Cứu Vé & Tem Số</a></li>
-            </ul>
+
+        <!-- Main Nav Links -->
+        <nav class="hidden md:flex items-center gap-1">
+          <a th:href="@{/}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-house-chimney text-xs mr-1.5 opacity-70"></i>Trang chủ
+          </a>
+          <a th:href="@{/trips}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-route text-xs mr-1.5 opacity-70"></i>Tìm chuyến
+          </a>
+          <a th:href="@{/appointments}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-calendar-plus text-xs mr-1.5 text-orange-500"></i>Đăng ký lịch hẹn
+          </a>
+          <a th:href="@{/appointments/lookup}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-magnifying-glass text-xs mr-1.5 opacity-70"></i>Tra cứu Tem số của tôi
+          </a>
+          <a th:href="@{/my-tickets}" class="px-3.5 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50/80 transition-all">
+            <i class="fa-solid fa-ticket text-xs mr-1.5"></i>Vé của tôi
+          </a>
+        </nav>
+
+        <!-- Auth Actions Container -->
+        <div class="flex items-center gap-3" id="auth-nav-container">
+          <a th:href="@{/login}" class="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:shadow-lg transition-all">
+            <i class="fa-regular fa-user text-xs"></i>
+            <span>Đăng nhập</span>
+          </a>
         </div>
+
+      </div>
     </div>
-</nav>
+  </header>
 
-<div class="container py-5" style="max-width: 850px;">
-    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
-        <h4 class="fw-bold mb-3"><i class="bi bi-search me-2 text-primary"></i>Tra Cứu Vé Xe Điện Tử & Tem Số</h4>
-        <p class="text-muted small mb-4">Nhập số điện thoại đã sử dụng khi đặt vé để xem danh sách vé, kiểm tra tình trạng thanh toán và lấy mã QR lên xe.</p>
-
-        <form action="/my-tickets" method="get" class="row g-3 mb-4">
-            <div class="col-md-9">
-                <label class="form-label text-secondary fw-semibold">Số điện thoại liên hệ</label>
-                <input type="tel" class="form-control form-control-lg" name="phone" th:value="${searchedPhone}" placeholder="0901234567" required>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
-                    <i class="bi bi-search me-1"></i>Tra Cứu
-                </button>
-            </div>
-        </form>
-
-        <!-- Ticket results list -->
-        <div th:if="${tickets != null and !tickets.empty}">
-            <h5 class="fw-bold text-dark mb-3">Danh Sách Vé Của Quý Khách</h5>
-            <div class="card border rounded-3 p-3 mb-3 shadow-sm bg-white" th:each="t : ${tickets}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <span class="badge bg-primary me-2" th:text="${t.ticketCode}">TK-12345</span>
-                        <span class="badge bg-success" th:if="${t.status != null and t.status.name() == 'CONFIRMED'}">ĐÃ XUẤT VÉ</span>
-                        <span class="badge bg-warning text-dark" th:if="${t.status != null and t.status.name() == 'PENDING'}">CHỜ THANH TOÁN</span>
-                        <span class="badge bg-secondary" th:if="${t.status != null and t.status.name() == 'CANCELLED'}">ĐÃ HỦY</span>
-                    </div>
-                    <div class="h5 fw-bold text-danger mb-0" th:text="${#numbers.formatDecimal(t.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">350,000 VNĐ</div>
-                </div>
-
-                <div class="row g-2 small text-secondary mt-1">
-                    <div class="col-sm-6">Hành khách: <strong class="text-dark" th:text="${t.customerName}">Nguyễn Văn A</strong></div>
-                    <div class="col-sm-6">Số ghế: <strong class="text-success fs-6" th:text="${t.seatNumber}">A01</strong></div>
-                    <div class="col-sm-6">Tuyến: <strong class="text-primary"><span th:text="${t.origin}">Hà Nội</span> &rarr; <span th:text="${t.destination}">Đà Nẵng</span></strong></div>
-                    <div class="col-sm-6">Khởi hành: <strong class="text-dark" th:text="${#temporals.format(t.departureTime, 'HH:mm - dd/MM/yyyy')}">08:00 - 12/11/2026</strong></div>
-                </div>
-
-                <div class="mt-3 pt-2 border-top d-flex justify-content-end gap-2">
-                    <a th:if="${t.status != null and t.status.name() == 'PENDING'}" th:href="@{'/reservations/' + ${t.ticketId} + '/payment-step'}" class="btn btn-warning btn-sm fw-semibold">
-                        <i class="bi bi-wallet2 me-1"></i>Tiếp Tục Thanh Toán
-                    </a>
-                    <a th:if="${t.status != null and t.status.name() == 'CONFIRMED'}" th:href="@{'/reservations/' + ${t.ticketId} + '/confirmation'}" class="btn btn-outline-primary btn-sm fw-semibold">
-                        <i class="bi bi-qr-code me-1"></i>Xem Tem Số / Vé Điện Tử
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div th:if="${searchedPhone != null and (tickets == null or tickets.empty)}" class="text-center py-4 text-muted">
-            <i class="bi bi-ticket-perforated fs-1"></i>
-            <p class="mt-2 mb-0">Không tìm thấy vé nào gắn với số điện thoại này.</p>
-        </div>
+  <!-- Hero Header -->
+  <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white py-10 px-4 sm:px-6 relative overflow-hidden shadow-lg">
+    <div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+    <div class="max-w-4xl mx-auto relative z-10 text-center">
+      <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
+        <i class="fa-solid fa-qrcode"></i>
+        <span>Mã QR Lên Xe & Vé Xe Điện Tử E-Ticket</span>
+      </span>
+      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Tra Cứu Vé Xe Khách & Tem Số Điện Tử</h1>
+      <p class="mt-2 text-sm sm:text-base text-blue-100 max-w-2xl mx-auto">
+        Nhập số điện thoại đã sử dụng khi đặt vé để xem lịch sử hành trình, kiểm tra tình trạng thanh toán và xuất trình vé điện tử lên xe.
+      </p>
     </div>
-</div>
+  </header>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
+
+    <!-- Search Card (Đồng bộ chuẩn thiết kế modern) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+      
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Thông Tin Tra Cứu Vé</h2>
+          <p class="text-xs text-slate-500">Hệ thống tra cứu tự động theo số điện thoại hành khách đặt giữ chỗ</p>
+        </div>
+      </div>
+
+      <form th:action="@{/my-tickets}" method="get" class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="tel" name="phone" id="search-phone-input" th:value="${searchedPhone}" required
+                 placeholder="Nhập số điện thoại của bạn (VD: 0912345678)..."
+                 pattern="^(0|\+84)[0-9]{9,10}$"
+                 class="w-full h-12 pl-11 pr-4 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm font-semibold transition" />
+        </div>
+        <button type="submit"
+                class="h-12 px-8 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:scale-[1.01] active:scale-99 transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          <span>Tra Cứu Vé</span>
+        </button>
+      </form>
+
+    </div>
+
+    <!-- Initial Prompt Card (Khi chưa nhập số điện thoại) -->
+    <div th:if="${searchedPhone == null or searchedPhone.isBlank()}"
+         class="bg-white rounded-3xl p-10 text-center shadow-sm border border-slate-100 space-y-3">
+      <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto">
+        <i class="fa-solid fa-ticket-simple"></i>
+      </div>
+      <h3 class="text-base font-bold text-slate-800">Tra cứu vé xe điện tử của quý khách</h3>
+      <p class="text-xs text-slate-500 max-w-md mx-auto">
+        Vui lòng nhập <strong>Số điện thoại</strong> bạn đã sử dụng khi giữ chỗ vé ở ô tìm kiếm phía trên để kiểm tra thông tin vé xe và mã QR lên xe.
+      </p>
+      <div class="pt-2">
+        <a th:href="@{/trips}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
+          <i class="fa-solid fa-route"></i>
+          <span>Nếu chưa đặt vé, nhấp vào đây để tìm chuyến xe</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Ticket Results List (Khi đã tìm thấy vé) -->
+    <div th:if="${tickets != null and !tickets.empty}" class="space-y-4">
+      
+      <div class="flex items-center justify-between px-2">
+        <h2 class="text-sm font-bold text-slate-600 uppercase tracking-wider">
+          Danh sách vé của số điện thoại: <span class="text-blue-600 font-mono" th:text="${searchedPhone}"></span> (<span th:text="${tickets.size()}">0</span> vé)
+        </h2>
+        <span class="text-xs text-slate-400 italic">Xuất trình vé điện tử hoặc mã QR khi lên xe</span>
+      </div>
+
+      <!-- Each Ticket Card -->
+      <div th:each="t : ${tickets}"
+           class="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all">
+        
+        <!-- Ticket Header Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 font-black text-xs border border-blue-200 font-mono tracking-wider"
+                    th:text="${t.ticketCode}">TK-XXXXX</span>
+              
+              <!-- Status Badges -->
+              <span th:if="${t.status != null and t.status.name() == 'CONFIRMED'}"
+                    class="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <i class="fa-solid fa-circle-check"></i> ĐÃ XÁC NHẬN & THANH TOÁN
+              </span>
+              <span th:if="${t.status != null and t.status.name() == 'PENDING'}"
+                    class="px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                <i class="fa-solid fa-hourglass-half"></i> CHỜ THANH TOÁN (GIỮ CHỖ)
+              </span>
+              <span th:if="${t.status != null and t.status.name() == 'CANCELLED'}"
+                    class="px-3 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                <i class="fa-solid fa-ban"></i> ĐÃ HỦY VÉ
+              </span>
+              <span th:if="${t.status != null and t.status.name() == 'EXPIRED'}"
+                    class="px-3 py-1 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                <i class="fa-solid fa-clock-rotate-left"></i> ĐÃ HẾT HẠN GIỮ CHỖ
+              </span>
+            </div>
+
+            <!-- Route Heading -->
+            <div class="flex items-center gap-2 mt-3 text-base sm:text-xl font-extrabold text-slate-900">
+              <span th:text="${t.origin}">Sài Gòn</span>
+              <i class="fa-solid fa-arrow-right-long text-blue-600 text-sm"></i>
+              <span th:text="${t.destination}">Nha Trang</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">
+              <span th:text="${t.operatorName ?: 'Nhà xe chất lượng cao'}">Phương Trang</span>
+              <span class="mx-1">•</span>
+              <span th:text="${t.busType ?: 'Xe Khách Giường Nằm'}">Xe 38 Chỗ</span>
+            </p>
+          </div>
+
+          <!-- Price -->
+          <div class="text-left sm:text-right">
+            <span class="block text-[11px] text-slate-400 font-bold uppercase tracking-wider">Giá vé thanh toán</span>
+            <span class="text-xl sm:text-2xl font-black text-orange-600"
+                  th:text="${#numbers.formatDecimal(t.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">350.000 đ</span>
+          </div>
+        </div>
+
+        <!-- Ticket Details Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 text-xs">
+          <div>
+            <span class="block text-slate-400 font-medium mb-0.5">Hành khách:</span>
+            <strong class="text-slate-800 text-sm font-bold" th:text="${t.customerName}">Nguyễn Văn A</strong>
+          </div>
+          <div>
+            <span class="block text-slate-400 font-medium mb-0.5">Số điện thoại:</span>
+            <strong class="text-slate-800 text-sm font-mono font-bold" th:text="${t.customerPhone}">0901234567</strong>
+          </div>
+          <div>
+            <span class="block text-slate-400 font-medium mb-0.5">Vị trí ghế nằm:</span>
+            <strong class="text-emerald-700 text-sm font-bold font-mono"
+                    th:text="'Ghế ' + ${t.seatNumber}">Ghế A01</strong>
+          </div>
+          <div>
+            <span class="block text-slate-400 font-medium mb-0.5">Giờ khởi hành:</span>
+            <strong class="text-blue-700 text-sm font-bold"
+                    th:text="${#temporals.format(t.departureTime, 'HH:mm - dd/MM/yyyy')}">08:00 - 14/11/2026</strong>
+          </div>
+        </div>
+
+        <!-- Ticket Footer & Action Buttons -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          
+          <div class="text-slate-400 text-[11px]">
+            <i class="fa-solid fa-shield-halved text-emerald-500 mr-1"></i>
+            <span>Vé đã được bảo chứng hệ thống & mã vạch đối soát điện tử.</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- If PENDING: Continue payment -->
+            <a th:if="${t.status != null and t.status.name() == 'PENDING'}"
+               th:href="@{'/reservations/' + ${t.ticketId} + '/payment-step'}"
+               class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-qrcode"></i>
+              <span>Tiếp Tục Thanh Toán VietQR</span>
+            </a>
+
+            <!-- If CONFIRMED: View E-ticket with Barcode & QR -->
+            <a th:if="${t.status != null and t.status.name() == 'CONFIRMED'}"
+               th:href="@{'/reservations/' + ${t.ticketId} + '/confirmation'}"
+               class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-ticket"></i>
+              <span>Xem Vé Điện Tử & Mã Lên Xe</span>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Empty State (Khi đã tìm kiếm nhưng không có vé) -->
+    <div th:if="${searchedPhone != null and !searchedPhone.isBlank() and (tickets == null or tickets.empty)}"
+         class="bg-white rounded-3xl p-12 text-center shadow-sm border border-slate-100 space-y-3">
+      <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mx-auto">
+        <i class="fa-solid fa-ticket-simple"></i>
+      </div>
+      <h3 class="text-base font-bold text-slate-800">Không tìm thấy vé nào phù hợp</h3>
+      <p class="text-xs text-slate-500 max-w-sm mx-auto">
+        Không có giao dịch đặt vé nào gắn với số điện thoại <strong class="text-slate-700 font-mono" th:text="${searchedPhone}"></strong>. Quý khách vui lòng kiểm tra lại số điện thoại hoặc đặt chuyến mới.
+      </p>
+      <div class="pt-2">
+        <a th:href="@{/trips}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition">
+          <i class="fa-solid fa-route"></i>
+          <span>Tìm & Đặt Chuyến Xe Ngay</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 mt-auto">
+    <p>&copy; 2026 BusTicket Pro - Hệ thống Quản lý Bán vé Xe khách & Lịch hẹn Tư vấn Du lịch. Hotline: 1900 6868</p>
+  </footer>
+
+  <script>
+    // Đồng bộ trạng thái đăng nhập trên Navbar & Tự động điền SĐT nếu có
+    (function checkAuthNav() {
+      const authBox = document.getElementById('auth-nav-container');
+      const phoneInput = document.getElementById('search-phone-input');
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+
+      try {
+        const u = JSON.parse(userStr);
+        const roleLabel = u.role ? u.role.replace('ROLE_', '') : '';
+        
+        if (authBox) {
+          authBox.innerHTML = `
+            <div class="flex items-center gap-2">
+              <div class="text-right hidden sm:block">
+                <div class="text-xs font-black text-slate-800">${u.fullName || u.username}</div>
+                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-700">${roleLabel}</span>
+              </div>
+              <button onclick="handleLogout()" title="Đăng xuất" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </button>
+            </div>
+          `;
+        }
+
+        // Tự động điền SĐT nếu ô tìm kiếm đang trống
+        if (phoneInput && !phoneInput.value && (u.phone || u.phoneNumber)) {
+          phoneInput.value = u.phone || u.phoneNumber;
+        }
+      } catch (e) {}
+    })();
+
+    function handleLogout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.reload();
+    }
+  </script>
+
 </body>
 </html>
