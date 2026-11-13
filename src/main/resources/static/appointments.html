@@ -96,7 +96,7 @@
               <label class="block text-xs font-bold text-slate-700 mb-1.5">Số điện thoại liên hệ <span class="text-red-500">*</span></label>
               <div class="relative">
                 <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-                <input type="tel" id="cust-phone" required placeholder="0912345678" pattern="[0-9]{10,11}" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
+                <input type="tel" id="cust-phone" required placeholder="0912345678" pattern="^(0|\+84)[0-9]{9,10}$" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
               </div>
             </div>
           </div>
@@ -123,12 +123,11 @@
               <div class="relative">
                 <i class="fa-solid fa-clock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                 <select id="cust-slot" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition appearance-none bg-white">
-                  <option value="">-- Chọn khung giờ --</option>
-                  <option value="08:00 - 09:00">08:00 - 09:00 (Buổi sáng)</option>
-                  <option value="09:00 - 10:00">09:00 - 10:00 (Buổi sáng)</option>
-                  <option value="10:00 - 11:00">10:00 - 11:00 (Buổi sáng)</option>
-                  <option value="14:00 - 15:00">14:00 - 15:00 (Buổi chiều)</option>
-                  <option value="15:00 - 16:00">15:00 - 16:00 (Buổi chiều)</option>
+                  <option value="08:00 - 09:00" selected>08:00 - 09:00 (Buổi sáng)</option>
+                  <option value="09:15 - 10:15">09:15 - 10:15 (Buổi sáng)</option>
+                  <option value="10:30 - 11:30">10:30 - 11:30 (Buổi sáng)</option>
+                  <option value="13:30 - 14:30">13:30 - 14:30 (Buổi chiều)</option>
+                  <option value="14:45 - 15:45">14:45 - 15:45 (Buổi chiều)</option>
                   <option value="16:00 - 17:00">16:00 - 17:00 (Buổi chiều)</option>
                 </select>
               </div>
@@ -136,8 +135,21 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nhu cầu tư vấn / Ghi chú</label>
-            <textarea id="cust-notes" rows="3" placeholder="Ví dụ: Cần tư vấn đoàn 25 khách đi Đà Lạt, thuê nguyên chuyến xe giường nằm..." class="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition resize-none"></textarea>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nội dung cần tư vấn <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <i class="fa-solid fa-comments absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+              <select id="cust-type" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition appearance-none bg-white">
+                <option value="Tư vấn lộ trình xe khách & hợp đồng đoàn" selected>Tư vấn lộ trình xe khách & hợp đồng đoàn</option>
+                <option value="Tư vấn chính sách giá vé & khuyến mãi">Tư vấn chính sách giá vé & khuyến mãi</option>
+                <option value="Hỗ trợ đổi / hoàn vé đặc biệt">Hỗ trợ đổi / hoàn vé đặc biệt</option>
+                <option value="Tư vấn hợp đồng đại lý / nhà xe">Tư vấn hợp tác đối tác nhà xe</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ghi chú nhu cầu chi tiết</label>
+            <textarea id="cust-notes" rows="3" placeholder="Ví dụ: Cần tư vấn đoàn 25 khách đi Đà Lạt, thuê nguyên chuyến xe giường nằm VIP..." class="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition resize-none"></textarea>
           </div>
 
           <button type="submit" id="btn-submit-appointment" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition duration-200">
@@ -247,11 +259,15 @@
               <span id="slip-slot" class="font-bold text-orange-600">—</span>
             </div>
             <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-500">Nội dung tư vấn:</span>
+              <span id="slip-type" class="font-bold text-slate-800 text-right">—</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
               <span class="text-slate-500">Trạng thái:</span>
               <span id="slip-status" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold text-[10px]">CHỜ TƯ VẤN</span>
             </div>
             <div class="py-1">
-              <span class="text-slate-500 block mb-0.5">Nhu cầu tư vấn:</span>
+              <span class="text-slate-500 block mb-0.5">Ghi chú chi tiết:</span>
               <p id="slip-notes" class="text-slate-700 italic bg-slate-50 p-2 rounded-xl text-[11px]">—</p>
             </div>
           </div>
@@ -288,7 +304,7 @@
   <!-- Scripts -->
   <script src="api.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       renderNavbar('appointments');
 
       // Đặt ngày hẹn mặc định là ngày mai
@@ -298,6 +314,17 @@
       const dateInput = document.getElementById('cust-date');
       dateInput.min = new Date().toISOString().split('T')[0];
       dateInput.value = tomorrowStr;
+
+      // Nạp danh sách khung giờ từ máy chủ nếu có
+      try {
+        const slots = await fetchAPI('/appointments/standard-slots');
+        if (slots && Array.isArray(slots) && slots.length > 0) {
+          const select = document.getElementById('cust-slot');
+          select.innerHTML = slots.map((s, i) => `<option value="${s}" ${i === 0 ? 'selected' : ''}>${s}</option>`).join('');
+        }
+      } catch (e) {
+        // Giữ các options tĩnh mặc định
+      }
 
       // Điền sẵn thông tin user nếu đã đăng nhập
       const user = getCurrentUser();
@@ -342,23 +369,20 @@
         customerEmail: document.getElementById('cust-email').value.trim(),
         appointmentDate: document.getElementById('cust-date').value,
         timeSlot: document.getElementById('cust-slot').value,
+        consultationType: document.getElementById('cust-type').value,
         notes: document.getElementById('cust-notes').value.trim()
       };
 
       const btn = document.getElementById('btn-submit-appointment');
       withButtonLoading(btn, async () => {
         try {
-          const res = await fetchAPI('/appointments/schedule', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          });
-          
+          const res = await fetchAPI('/appointments/schedule', 'POST', payload);
           if (res) {
             showSuccessModal('Đăng ký thành công! 🎉', `Mã tiếp nhận: ${res.appointmentCode}. Vui lòng lưu lại Tem số để xuất trình.`);
             displaySlip(res);
           }
         } catch (err) {
-          // Toast đã được báo trong fetchAPI
+          // Toast / Modal lỗi đã được fetchAPI xử lý
         }
       }, 'Đang cấp tem số...');
     }
@@ -401,6 +425,7 @@
       document.getElementById('slip-phone').textContent = data.customerPhone || '—';
       document.getElementById('slip-date').textContent = data.appointmentDate || '—';
       document.getElementById('slip-slot').textContent = data.timeSlot || '—';
+      document.getElementById('slip-type').textContent = data.consultationType || '—';
       document.getElementById('slip-status').textContent = data.status || 'CHỜ TƯ VẤN';
       document.getElementById('slip-notes').textContent = data.notes || '(Không có ghi chú)';
 

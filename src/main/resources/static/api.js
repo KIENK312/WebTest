@@ -131,6 +131,17 @@ function showLoading(show = true) {
 // 3. FETCH API TRUNG TÂM
 // ============================================================
 async function fetchAPI(endpoint, method = 'GET', body = null, params = null, extra = {}) {
+  // Hỗ trợ linh hoạt cả 2 kiểu gọi:
+  // Kiểu 1: fetchAPI('/url', 'POST', payload, params, extra)
+  // Kiểu 2: fetchAPI('/url', { method: 'POST', body: payload, ... })
+  if (typeof method === 'object' && method !== null) {
+    const opts = method;
+    method = opts.method || 'GET';
+    body = opts.body !== undefined ? opts.body : null;
+    params = opts.params !== undefined ? opts.params : params;
+    extra = opts.extra !== undefined ? opts.extra : (opts.showOverlay !== undefined ? { showOverlay: opts.showOverlay } : extra);
+  }
+
   let url = `${API_BASE}${endpoint}`;
   if (params) {
     const qs = new URLSearchParams(
@@ -151,7 +162,7 @@ async function fetchAPI(endpoint, method = 'GET', body = null, params = null, ex
 
   const options = { method, headers };
   if (body && method !== 'GET') {
-    options.body = JSON.stringify(body);
+    options.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
   // TỐI ƯU HIỆU NĂNG UX:
