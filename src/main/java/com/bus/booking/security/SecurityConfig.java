@@ -103,6 +103,7 @@ public class SecurityConfig {
                             "/reservations", "/reservations/**",
                             "/appointments", "/appointments/**",
                             "/my-tickets", "/my-tickets/**",
+                            "/admin", "/admin/**",
                             "/seat-selection",
                             "/login", "/logout"
                         ).permitAll()

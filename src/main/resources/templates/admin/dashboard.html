@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bảng Điều Khiển Quản Trị Viên (Admin Dashboard) – BusTicket Pro</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-amber-500 selection:text-white">
+
+  <!-- Top Admin Navigation Bar -->
+  <header class="bg-slate-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        
+        <!-- Brand Logo & Badge -->
+        <div class="flex items-center gap-3">
+          <a th:href="@{/}" class="flex items-center gap-2.5 group">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-md shadow-amber-500/30 group-hover:scale-105 transition">
+              <i class="fa-solid fa-gauge-high text-lg"></i>
+            </div>
+            <div>
+              <span class="text-xl font-black bg-gradient-to-r from-amber-400 via-orange-400 to-amber-200 bg-clip-text text-transparent">BusTicket</span>
+              <span class="ml-1 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">Admin Portal</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Quick Navigation -->
+        <nav class="hidden md:flex items-center gap-2 text-xs font-bold">
+          <a th:href="@{/admin/dashboard}" class="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 transition">
+            <i class="fa-solid fa-chart-pie mr-1.5"></i>Tổng quan
+          </a>
+          <a th:href="@{/appointments/lookup(all=true)}" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+            <i class="fa-solid fa-clipboard-user mr-1.5 text-blue-400"></i>Quầy Tiếp Nhận Tư Vấn
+          </a>
+          <a th:href="@{/trips}" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+            <i class="fa-solid fa-bus mr-1.5 text-emerald-400"></i>Chuyến Xe Khách
+          </a>
+          <a th:href="@{/}" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+            <i class="fa-solid fa-globe mr-1.5"></i>Xem Cổng Khách Hàng
+          </a>
+        </nav>
+
+        <!-- Admin Profile & Logout -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <div class="text-xs font-extrabold text-white flex items-center gap-1.5 justify-end">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span th:text="${currentUsername != null ? currentUsername : 'Quản trị viên'}">admin</span>
+            </div>
+            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Hệ thống Trực Tuyến</span>
+          </div>
+
+          <a th:href="@{/logout}" title="Đăng xuất"
+             class="px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span class="hidden sm:inline">Đăng xuất</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+    <!-- Flash Alert Messages -->
+    <div th:if="${successMessage}" class="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-bold flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span th:text="${successMessage}">Thao tác thành công!</span>
+      </div>
+      <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-200">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div th:if="${errorMessage}" class="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-bold flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-circle-exclamation text-rose-400 text-base"></i>
+        <span th:text="${errorMessage}">Đã xảy ra lỗi!</span>
+      </div>
+      <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-200">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Page Header & Quick Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-400 mb-2">
+          <i class="fa-solid fa-database"></i>
+          <span>Dữ liệu thời gian thực từ Microsoft SQL Server (100% Realtime)</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Trung Tâm Điều Hành & Phân Tích Doanh Thu</h1>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">Giám sát tổng thể hoạt động bán vé, doanh thu đối tác nhà xe và luồng tiếp nhận tư vấn du lịch.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="openPartnerModal()"
+                class="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-amber-500/20 transition flex items-center gap-2">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Thêm Nhà Xe Đối Tác</span>
+        </button>
+        <a th:href="@{/appointments/lookup(all=true)}"
+           class="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-2">
+          <i class="fa-solid fa-headset text-xs text-blue-400"></i>
+          <span>Bàn Tiếp Nhận Quầy</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 4 KPI Metrics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      
+      <!-- Card 1: Doanh Thu -->
+      <div class="p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-lg relative overflow-hidden group hover:border-amber-500/50 transition">
+        <div class="absolute right-3 top-3 w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Tổng Doanh Thu Thực Tế</p>
+        <h3 class="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight"
+            th:text="${#numbers.formatDecimal(dashboard.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+          0 đ
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
+          <span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Xác nhận</span>
+          <span>Tính từ vé thanh toán thành công</span>
+        </p>
+      </div>
+
+      <!-- Card 2: Vé Đã Bán -->
+      <div class="p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-lg relative overflow-hidden group hover:border-blue-500/50 transition">
+        <div class="absolute right-3 top-3 w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-ticket"></i>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Vé Bán Thành Công</p>
+        <h3 class="text-2xl sm:text-3xl font-black text-blue-400 tracking-tight">
+          <span th:text="${dashboard.totalTicketsSold}">0</span>
+          <span class="text-sm font-semibold text-slate-400">/ <span th:text="${dashboard.totalTickets}">0</span> vé</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-3 flex items-center gap-2">
+          <span class="text-amber-400 font-bold" th:text="${dashboard.pendingTickets} + ' chờ thanh toán'">0 chờ</span>
+          <span>&bull;</span>
+          <span class="text-rose-400 font-bold" th:text="${dashboard.cancelledTickets} + ' đã hủy'">0 hủy</span>
+        </p>
+      </div>
+
+      <!-- Card 3: Chuyến Xe Vận Hành -->
+      <div class="p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-lg relative overflow-hidden group hover:border-emerald-500/50 transition">
+        <div class="absolute right-3 top-3 w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-bus-simple"></i>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Lịch Trình Vận Hành</p>
+        <h3 class="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">
+          <span th:text="${dashboard.totalTrips}">0</span>
+          <span class="text-sm font-semibold text-slate-400">chuyến</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
+          <span class="text-emerald-400 font-bold" th:text="${dashboard.totalBuses} + ' xe khách'">0 xe</span>
+          <span>trên</span>
+          <span class="text-white font-bold" th:text="${dashboard.totalRoutes} + ' tuyến đường'">0 tuyến</span>
+        </p>
+      </div>
+
+      <!-- Card 4: Nhà Xe Đối Tác -->
+      <div class="p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-lg relative overflow-hidden group hover:border-purple-500/50 transition">
+        <div class="absolute right-3 top-3 w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-handshake"></i>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Đối Tác Chiến Lược</p>
+        <h3 class="text-2xl sm:text-3xl font-black text-purple-400 tracking-tight">
+          <span th:text="${dashboard.totalOperators}">0</span>
+          <span class="text-sm font-semibold text-slate-400">nhà xe</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
+          <span class="text-purple-300 font-bold">FUTA & Hoàng Long</span>
+          <span>đang hoạt động</span>
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Chart.js 12-Month Revenue Analytics -->
+    <div class="p-6 sm:p-8 rounded-3xl bg-slate-800/90 border border-slate-700/80 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-700/80">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-amber-400"></i>
+            <span>Biểu Đồ Doanh Thu Bán Vé 12 Tháng Thực Tế</span>
+          </h2>
+          <p class="text-xs text-slate-400">Thống kê doanh số theo chu kỳ thanh toán năm 2026 (Đơn vị: VNĐ)</p>
+        </div>
+        <div class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-700 text-slate-300 border border-slate-600 flex items-center gap-1.5">
+          <i class="fa-regular fa-calendar"></i>
+          <span>Năm 2026</span>
+        </div>
+      </div>
+
+      <div class="h-64 sm:h-80 w-full relative">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Two-Column Grid: Partners & Recent Tickets -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Column 1: Danh Sách Nhà Xe Đối Tác -->
+      <div class="p-6 rounded-3xl bg-slate-800/90 border border-slate-700/80 shadow-xl space-y-4 flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/80">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-building text-amber-400"></i>
+              <span>Nhà Xe Đối Tác Nền Tảng</span>
+            </h3>
+            <p class="text-xs text-slate-400">Danh mục nhà xe đối tác vận hành hệ thống</p>
+          </div>
+          <button type="button" onclick="openPartnerModal()" class="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+            <i class="fa-solid fa-circle-plus"></i>
+            <span>Thêm mới</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto flex-1">
+          <table class="w-full text-left text-xs">
+            <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/60 rounded-xl">
+              <tr>
+                <th class="p-3 font-bold rounded-l-xl">Hãng Xe</th>
+                <th class="p-3 font-bold">Hotline</th>
+                <th class="p-3 font-bold">Trạng Thái</th>
+                <th class="p-3 font-bold text-right rounded-r-xl">Hành Động</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/50">
+              <tr th:each="partner : ${partners}" class="hover:bg-slate-700/30 transition">
+                <td class="p-3">
+                  <div class="font-extrabold text-white" th:text="${partner.name}">Công ty FUTA</div>
+                  <div class="text-[10px] text-amber-400 font-mono" th:text="${partner.code}">FUTA</div>
+                </td>
+                <td class="p-3 text-slate-300 font-medium" th:text="${partner.contactPhone}">19006067</td>
+                <td class="p-3">
+                  <span th:if="${partner.status == 'ACTIVE'}"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Đang Chạy
+                  </span>
+                  <span th:unless="${partner.status == 'ACTIVE'}"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                        th:text="${partner.status}">
+                    Tạm Dừng
+                  </span>
+                </td>
+                <td class="p-3 text-right">
+                  <form th:action="@{/admin/partners/{id}/status(id=${partner.id})}" method="post" class="inline">
+                    <input type="hidden" name="status" th:value="${partner.status == 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'}" />
+                    <button type="submit"
+                            th:class="${partner.status == 'ACTIVE'} ? 'px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 transition' : 'px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition'"
+                            th:text="${partner.status == 'ACTIVE' ? 'Tạm Dừng' : 'Kích Hoạt'}">
+                      Đổi trạng thái
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Column 2: Vé Gần Đây Trên Toàn Hệ Thống -->
+      <div class="p-6 rounded-3xl bg-slate-800/90 border border-slate-700/80 shadow-xl space-y-4 flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/80">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+              <span>Giao Dịch Vé Gần Đây</span>
+            </h3>
+            <p class="text-xs text-slate-400">Nhật ký đặt chỗ và xuất vé mới nhất</p>
+          </div>
+          <a th:href="@{/my-tickets}" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+            <span>Tra cứu vé</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </a>
+        </div>
+
+        <div class="overflow-x-auto flex-1">
+          <table class="w-full text-left text-xs">
+            <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/60 rounded-xl">
+              <tr>
+                <th class="p-3 font-bold rounded-l-xl">Mã Vé / Khách</th>
+                <th class="p-3 font-bold">Chuyến / Ghế</th>
+                <th class="p-3 font-bold">Tổng Tiền</th>
+                <th class="p-3 font-bold text-right rounded-r-xl">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/50">
+              <tr th:each="ticket : ${dashboard.recentTickets}" class="hover:bg-slate-700/30 transition">
+                <td class="p-3">
+                  <div class="font-extrabold text-blue-300 font-mono" th:text="${ticket.ticketCode}">TK-SAMPLE</div>
+                  <div class="text-[11px] text-slate-300 font-medium" th:text="${ticket.customerName}">Khách Hàng</div>
+                </td>
+                <td class="p-3">
+                  <div class="font-bold text-white" th:text="${ticket.origin + ' - ' + ticket.destination}">Hà Nội - Đà Nẵng</div>
+                  <div class="text-[10px] text-slate-400" th:text="'Ghế: ' + ${ticket.seatNumber}">Ghế A01</div>
+                </td>
+                <td class="p-3 font-extrabold text-amber-400"
+                    th:text="${#numbers.formatDecimal(ticket.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                  350,000 đ
+                </td>
+                <td class="p-3 text-right">
+                  <span th:if="${ticket.status == 'CONFIRMED'}"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Đã Mua
+                  </span>
+                  <span th:if="${ticket.status == 'PENDING'}"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Giữ Chỗ
+                  </span>
+                  <span th:if="${ticket.status == 'CANCELLED'}"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    Đã Hủy
+                  </span>
+                </td>
+              </tr>
+
+              <tr th:if="${dashboard.recentTickets == null or dashboard.recentTickets.isEmpty()}">
+                <td colspan="4" class="p-8 text-center text-slate-400 italic">
+                  Chưa có giao dịch vé nào được ghi nhận.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Thêm Nhà Xe Đối Tác Mới -->
+  <div id="partnerModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-3xl w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl animate-scaleIn">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-700">
+        <div>
+          <h3 class="text-lg font-black text-white">Đăng Ký Đối Tác Nhà Xe Mới</h3>
+          <p class="text-xs text-slate-400">Nhập thông tin doanh nghiệp vận tải vào hệ thống</p>
+        </div>
+        <button type="button" onclick="closePartnerModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form th:action="@{/admin/partners}" method="post" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Tên Hãng Xe / Doanh Nghiệp <span class="text-rose-400">*</span></label>
+          <input type="text" name="name" required placeholder="VD: Công ty Cổ phần Vận tải Du lịch Hà Sơn Hải Vân"
+                 class="w-full h-11 px-3.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Mã Viết Tắt (Code) <span class="text-rose-400">*</span></label>
+            <input type="text" name="code" required placeholder="VD: HASON"
+                   class="w-full h-11 px-3.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500 uppercase transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Hotline Đặt Vé <span class="text-rose-400">*</span></label>
+            <input type="tel" name="contactPhone" required placeholder="1900 6776"
+                   class="w-full h-11 px-3.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500 transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Email Liên Hệ <span class="text-rose-400">*</span></label>
+          <input type="email" name="contactEmail" required placeholder="hotro@hason.vn"
+                 class="w-full h-11 px-3.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Trụ Sở Chính / Văn Phòng <span class="text-rose-400">*</span></label>
+          <input type="text" name="address" required placeholder="Bến xe Mỹ Đình, Từ Liêm, Hà Nội"
+                 class="w-full h-11 px-3.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500 transition" />
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-700">
+          <button type="button" onclick="closePartnerModal()"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-700 border border-slate-700 transition">
+            Hủy Bỏ
+          </button>
+          <button type="submit"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-md transition">
+            <i class="fa-solid fa-check mr-1.5"></i>Lưu Đối Tác
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 text-slate-500 py-6 text-xs text-center border-t border-slate-800 mt-auto">
+    <p>&copy; 2026 BusTicket Pro - Hệ thống Quản trị Bán vé & Tư vấn Du lịch Đa Phương tiện.</p>
+  </footer>
+
+  <!-- Script: Chart.js Rendering & Modal -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    const chartData = /*[[${dashboard.chartData}]]*/ [];
+    /*]]>*/
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const labels = chartData.map(item => item.monthName || ('T' + item.month));
+      const values = chartData.map(item => item.revenue || 0);
+
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Doanh thu thực tế (VNĐ)',
+            data: values,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            borderWidth: 3,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: '#ffffff',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: true,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: '#94a3b8',
+                font: { family: '"Plus Jakarta Sans"', size: 12, weight: 'bold' }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw || 0;
+                  return ' Doanh thu: ' + val.toLocaleString('vi-VN') + ' đ';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(148, 163, 184, 0.08)' },
+              ticks: { color: '#94a3b8', font: { family: '"Plus Jakarta Sans"', size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(148, 163, 184, 0.08)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: '"Plus Jakarta Sans"', size: 11 },
+                callback: function(value) {
+                  if (value >= 1000000) return (value / 1000000).toFixed(1) + ' tr';
+                  if (value >= 1000) return (value / 1000).toFixed(0) + ' k';
+                  return value;
+                }
+              }
+            }
+          }
+        }
+      });
+    });
+
+    function openPartnerModal() {
+      document.getElementById('partnerModal').classList.remove('hidden');
+    }
+
+    function closePartnerModal() {
+      document.getElementById('partnerModal').classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>

@@ -144,6 +144,7 @@ public class WebAppointmentController {
     /**
      * Cập nhật trạng thái lịch hẹn / tem số tư vấn (Dành cho Admin & Operator trực quầy)
      * Áp dụng PRG: Sau khi update, HTTP 303 Redirect về trang lookup.
+     * Kiểm tra bảo mật RBAC: Bắt buộc người dùng phải có vai trò ROLE_ADMIN hoặc ROLE_OPERATOR (qua HttpOnly Cookie / JWT).
      */
     @PostMapping("/{id}/status")
     public String updateAppointmentStatus(
@@ -152,6 +153,21 @@ public class WebAppointmentController {
             @RequestParam(value = "assignedStaff", required = false) String assignedStaff,
             @RequestParam(value = "returnCode", required = false) String returnCode,
             RedirectAttributes redirectAttributes) {
+
+        // 1. Kiểm tra xác thực và phân quyền RBAC (Role-Based Access Control)
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isStaff = auth != null && auth.isAuthenticated() && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_OPERATOR"));
+
+        if (!isStaff) {
+            log.warn("[SECURITY-BLOCKED] Người dùng chưa đăng nhập hoặc không có quyền Operator/Admin cố gắng đổi trạng thái lịch hẹn ID={}", id);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Từ chối thao tác: Bạn phải đăng nhập với vai trò Quản Trị Viên (Admin) hoặc Nhân Viên Quầy (Operator) để điều phối trạng thái lịch hẹn!");
+            if (returnCode != null && !returnCode.isBlank()) {
+                return "redirect:/appointments/lookup?code=" + returnCode;
+            }
+            return "redirect:/appointments/lookup";
+        }
 
         try {
             appointmentService.updateStatus(id, newStatus, assignedStaff);

@@ -279,8 +279,10 @@
             confirmButtonText: 'Bắt đầu'
           }).then(() => {
             const role = data.role || '';
-            if (role.includes('ADMIN') || role.includes('OPERATOR')) {
-              window.location.href = '/appointments/lookup';
+            if (role.includes('ADMIN')) {
+              window.location.href = '/admin/dashboard';
+            } else if (role.includes('OPERATOR')) {
+              window.location.href = '/appointments/lookup?all=true';
             } else {
               window.location.href = '/';
             }

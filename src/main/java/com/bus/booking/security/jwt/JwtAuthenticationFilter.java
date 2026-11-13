@@ -65,10 +65,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
+        // 1. Kiểm tra Authorization Header (dành cho REST API clients, mobile apps, Postman)
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length()).trim();
         }
+
+        // 2. Kiểm tra HttpOnly Cookie (dành cho Thymeleaf Web MVC & Form Submissions)
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("jwt_token".equals(cookie.getName()) || "access_token".equals(cookie.getName())) {
+                    if (StringUtils.hasText(cookie.getValue())) {
+                        return cookie.getValue().trim();
+                    }
+                }
+            }
+        }
+
         return null;
     }
 }

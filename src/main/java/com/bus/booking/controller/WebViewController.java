@@ -117,4 +117,17 @@ public class WebViewController {
     public String loginPage() {
         return "login";
     }
+
+    /**
+     * Đăng xuất khỏi hệ thống: Xóa HttpOnly cookie jwt_token và chuyển về trang đăng nhập
+     */
+    @GetMapping("/logout")
+    public String logout(jakarta.servlet.http.HttpServletResponse response) {
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("jwt_token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return "redirect:/login";
+    }
 }
