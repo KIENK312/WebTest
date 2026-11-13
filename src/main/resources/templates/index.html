@@ -75,8 +75,8 @@
         </nav>
 
         <!-- Auth Actions -->
-        <div class="flex items-center gap-3">
-          <a th:href="@{/login}" class="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+        <div class="flex items-center gap-3" id="auth-nav-container">
+          <a th:href="@{/login}" id="nav-login-btn" class="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0">
             <i class="fa-regular fa-user text-xs"></i>
             <span>Đăng nhập</span>
           </a>
@@ -392,6 +392,34 @@
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       dateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+
+    // Hiển thị trạng thái đăng nhập trên thanh điều hướng
+    (function checkAuthNav() {
+      const authBox = document.getElementById('auth-nav-container');
+      const userStr = localStorage.getItem('user');
+      if (!authBox || !userStr) return;
+      try {
+        const u = JSON.parse(userStr);
+        const roleLabel = u.role ? u.role.replace('ROLE_', '') : '';
+        authBox.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-black text-slate-800">${u.fullName || u.username}</div>
+              <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-700">${roleLabel}</span>
+            </div>
+            <button onclick="handleLogout()" title="Đăng xuất" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+          </div>
+        `;
+      } catch (e) {}
+    })();
+
+    function handleLogout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.reload();
     }
   </script>
 </body>

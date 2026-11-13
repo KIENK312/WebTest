@@ -219,5 +219,21 @@
     <p>&copy; 2026 BusTicket Pro - Hệ thống Quản lý Bán vé Xe khách & Lịch hẹn Tư vấn Du lịch. Hotline: 1900 6868</p>
   </footer>
 
+  <script>
+    (function autofillFromAuth() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      try {
+        const u = JSON.parse(userStr);
+        const nameInput = document.getElementById('customerName');
+        const phoneInput = document.getElementById('customerPhone');
+        const emailInput = document.getElementById('customerEmail');
+        if (nameInput && !nameInput.value && u.fullName) nameInput.value = u.fullName;
+        if (phoneInput && !phoneInput.value && (u.phone || u.phoneNumber)) phoneInput.value = u.phone || u.phoneNumber;
+        if (emailInput && !emailInput.value && u.email) emailInput.value = u.email;
+      } catch (e) {}
+    })();
+  </script>
+
 </body>
 </html>

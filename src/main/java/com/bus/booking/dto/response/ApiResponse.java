@@ -22,6 +22,10 @@ public class ApiResponse<T> {
     private T data;
     private LocalDateTime timestamp;
 
+    public boolean isSuccess() {
+        return status >= 200 && status < 300;
+    }
+
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .status(200)
