@@ -69,8 +69,8 @@
           <a th:href="@{/my-tickets}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
             <i class="fa-solid fa-ticket text-xs mr-1.5 opacity-70"></i>Vé của tôi
           </a>
-          <a th:href="@{/appointments/lookup}" class="px-3 py-2 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all">
-            <i class="fa-solid fa-headset text-xs mr-1 opacity-80"></i>Bàn tư vấn & Tem số
+          <a th:href="@{/appointments/lookup}" id="nav-staff-desk-link" class="hidden px-3 py-2 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all">
+            <i class="fa-solid fa-headset text-xs mr-1 opacity-80"></i>Bàn điều hành & Tem số
           </a>
         </nav>
 
@@ -413,6 +413,11 @@
             </button>
           </div>
         `;
+
+        if (u.role && (u.role.includes('ADMIN') || u.role.includes('OPERATOR'))) {
+          const staffLink = document.getElementById('nav-staff-desk-link');
+          if (staffLink) staffLink.classList.remove('hidden');
+        }
       } catch (e) {}
     })();
 

@@ -101,7 +101,10 @@ public class WebAppointmentController {
     }
 
     /**
-     * Tra cứu lịch hẹn theo số điện thoại, mã hẹn, hoặc xem toàn bộ danh sách (cho Staff/Operator)
+     * Tra cứu lịch hẹn:
+     * - Khách hàng: Chỉ được tra cứu Tem Số của chính mình (nhập Mã hẹn HEN-... hoặc Số điện thoại).
+     *   Mặc định không hiển thị danh sách của người khác để đảm bảo bảo mật thông tin.
+     * - Admin / Operator: Được tra cứu và xem danh sách tiếp nhận tại quầy khi truyền all=true.
      */
     @GetMapping("/lookup")
     public String lookupAppointments(
@@ -116,23 +119,24 @@ public class WebAppointmentController {
                 model.addAttribute("appointments", List.of(item));
                 model.addAttribute("searchedCode", code.trim());
             } catch (Exception e) {
-                model.addAttribute("errorMessage", "Không tìm thấy lịch hẹn với mã: " + code);
+                model.addAttribute("errorMessage", "Không tìm thấy tem số với mã: " + code);
             }
         } else if (phone != null && !phone.isBlank()) {
             List<AppointmentResponseDto> list = appointmentService.getAppointmentsByPhone(phone.trim());
             model.addAttribute("appointments", list);
             model.addAttribute("searchedPhone", phone.trim());
             if (list.isEmpty()) {
-                model.addAttribute("infoMessage", "Chưa có lịch hẹn nào gắn với số điện thoại: " + phone);
+                model.addAttribute("infoMessage", "Chưa có tem số nào gắn với số điện thoại: " + phone);
             }
         } else if (showAll) {
+            // Chỉ dành cho nhân viên điều hành / Admin xem bàn tiếp nhận tại quầy
             List<AppointmentResponseDto> list = appointmentService.getAllAppointments();
             model.addAttribute("appointments", list);
             model.addAttribute("showAll", true);
         } else {
-            // Mặc định hiển thị danh sách tất cả các tem số gần nhất để Admin / Operator tiện tra cứu
-            List<AppointmentResponseDto> list = appointmentService.getAllAppointments();
-            model.addAttribute("appointments", list);
+            // Mặc định với khách hàng: Không hiển thị tem số của người khác!
+            model.addAttribute("appointments", null);
+            model.addAttribute("promptForSearch", true);
         }
         return "appointments/lookup";
     }
