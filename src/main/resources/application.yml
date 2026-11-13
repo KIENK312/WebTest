@@ -11,6 +11,11 @@ spring:
   application:
     name: bus-ticket-multi-partner-service
 
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+
   sql:
     init:
       mode: never
